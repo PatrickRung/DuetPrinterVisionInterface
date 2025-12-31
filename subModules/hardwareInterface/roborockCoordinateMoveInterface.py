@@ -6,7 +6,7 @@ import sys
 from dotenv import load_dotenv
 import numpy
 
-import hardwareInterface.roborockHighResInterface as roborockHighResInterface
+import subModules.hardwareInterface.roborockHighResInterface as roborockHighResInterface
 
 
 class roborockCoordinateMoveInterface:

@@ -1,5 +1,5 @@
-from hardwareInterface import roborockHighResInterface
-from hardwareInterface import roborockCoordinateMoveInterface
+from ..hardwareInterface.roborockHighResInterface import roborockHighResInterface
+from ..hardwareInterface.roborockCoordinateMoveInterface import roborockCoordinateMoveInterface
 
 class roborockGcodeParser:
     def __init__(self, roborockHighResInterface, gcodeFileName):
@@ -10,4 +10,6 @@ class roborockGcodeParser:
 
 # For testing script
 if __name__ == "__main__":
-    parserReference = roborockGcodeParser()
+
+    print("test")
+    
