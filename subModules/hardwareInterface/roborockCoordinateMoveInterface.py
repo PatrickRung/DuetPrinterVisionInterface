@@ -8,14 +8,13 @@ import numpy
 
 import subModules.hardwareInterface.roborockHighResInterface as roborockHighResInterface
 
-
 class roborockCoordinateMoveInterface:
     
     def __init__(self, IP_ADDRESS, API_KEY):
         self.IP_ADDRESS_ = IP_ADDRESS
         self.API_KEY_ = API_KEY
         self.roborockHighResInterfaceReference = roborockHighResInterface.roborockHighResInterface(IP_ADDRESS=IP_ADDRESS, 
-                                                                                                   API_KEY=api_key)
+                                                                                                   API_KEY=API_KEY)
 
     # returns two variables being the coordinate of the position represented by two integers that are in CM
     # and the rotation in degrees
@@ -61,7 +60,7 @@ class roborockCoordinateMoveInterface:
 
         while distanceFromStart < desiredDistance:
             self.roborockHighResInterfaceReference.moveVectored(0.03, 0)
-            currPos, rot = roborockCoordMoveInter.getRoborockPos()
+            currPos, rot = self.getRoborockPos()
             newDistanceFromStart = numpy.sqrt(numpy.power(numpy.abs(currPos[0] - initPos[0]), 2) + numpy.power(numpy.abs(currPos[1] - initPos[1]), 2))
 
             # Previously holding a reference to the old distance was used to remove any spikes that were occuring as they were causing the move to location
@@ -107,25 +106,46 @@ class roborockCoordinateMoveInterface:
         print(response.content)
 
     # Distance is the length of the desired distance for the roborock to travel forward in CM
-    def moveLidarBased(self, desiredDistance):
-        initPos, rot = self.getRoborockPos()
-        print("Starting pos " + str(initPos))
+    # the sign in front of desired rot determines the direction to move, - being left and +
+    # being right
+    def rotateLidarBased(self, desiredRot):
+
+        if numpy.abs(desiredRot > 180) or desiredRot == 0:
+            print("ERROR: can only rotate by angles less than 180!")
+            return
+        
+        directionMoving = desiredRot / numpy.abs(desiredRot)
+
+        initPos, initRot = self.getRoborockPos()
+
+        newDesiredAngle = initRot + desiredRot
+
+        print(newDesiredAngle)
+
+        currPos, currRot = self.getRoborockPos()
 
         self.roborockHighResInterfaceReference.initiateHighResManualControl()
 
-        distanceFromStart = 0
+        # If we are within the starting range keep on rotating
+        while (directionMoving > 0 and currRot < newDesiredAngle) or (directionMoving < 0 and currRot > newDesiredAngle):
+            self.roborockHighResInterfaceReference.moveVectored(0, directionMoving * 2)
+            newPos, newRot = self.getRoborockPos()
 
-        while distanceFromStart < desiredDistance:
-            self.roborockHighResInterfaceReference.moveVectored(0.03, 0)
-            currPos, rot = roborockCoordMoveInter.getRoborockPos()
-            newDistanceFromStart = numpy.sqrt(numpy.power(numpy.abs(currPos[0] - initPos[0]), 2) + numpy.power(numpy.abs(currPos[1] - initPos[1]), 2))
+            if directionMoving > 0 and newRot < currRot:
+                # Full 360 has elapsed
+                newDesiredAngle = newDesiredAngle - 360
+            if directionMoving < 0 and newRot > currRot:
+                # Full 360 has elapsed in opposite dir
+                newDesiredAngle = newDesiredAngle + 360
+            currRot = newRot
+            print("current rot "  + str(currRot))
+            print("des angle " + str(newDesiredAngle))
 
-            # Previously holding a reference to the old distance was used to remove any spikes that were occuring as they were causing the move to location
-            distanceFromStart = newDistanceFromStart
-            
-            print(distanceFromStart)
+
         
 # main for testing the methods in this class
+# To run this main code from the:
+# python3 -m subModules.hardwareInterface.roborockCoordinateMoveInterface
 if __name__ == "__main__":  
     # Loads the dotenv
     load_dotenv()
@@ -138,7 +158,7 @@ if __name__ == "__main__":
     roborockCoordMoveInter = roborockCoordinateMoveInterface(IP_ADDRESS=IP_ADDRESS, 
                                                              API_KEY=api_key)
 
-    roborockCoordMoveInter.moveLidarBased(20)
+    roborockCoordMoveInter.rotateLidarBased(90)
 
 
 
