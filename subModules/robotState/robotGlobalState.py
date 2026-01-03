@@ -20,42 +20,9 @@ from picamera2 import Picamera2
 import cv2
 
 class robotGlobalState:
-
-    # Instantiates with all necescary objects and variables and terminates program if this does not happen
-    def __init__(self, 
-                 cameraReference: Picamera2,
-                 roborockHighResInterfaceRef: roborockHighResInterface,
-                 roborockCoordinateMoveInterfaceRef: roborockCoordinateMoveInterface,
-                 headlessRunStatus: bool,
-                 performingAPICalls: bool,
-                 aruco_marker_side_length: int):
-        if cameraReference is None:
-            raise Exception("cameraReference parameter not defined")
-            sys.exit
-        self.cameraReference_ = cameraReference
-        
-        if roborockHighResInterfaceRef is None:
-            raise Exception("roborockHighResInterfaceRef parameter not defined")
-        self.roborockHighResInterfaceRef_ = roborockHighResInterfaceRef
-
-        if roborockCoordinateMoveInterfaceRef is None:
-            raise Exception("roborockCoordinateMoveInterfaceRef parameter not defined")
-        self.roborockCoordinateMoveInterfaceRef_ = roborockCoordinateMoveInterfaceRef
-
-        if headlessRunStatus is None:
-            raise Exception("headlessRunStatus parameter not defined")
-        self.headlessRunStatus_ = headlessRunStatus
-
-        if performingAPICalls is None:
-            raise Exception("performingAPICalls parameter not defined")
-        self.performingAPICalls_ = performingAPICalls
-
-        if aruco_marker_side_length is None:
-            raise Exception("aruco_marker_side_length parameter not defined")
-        self.arucoMarkerSideLength_ = aruco_marker_side_length 
         
     # Instantiates and creates all necessary references
-    def __init(self, 
+    def __init__(self, 
                IP_ADDRESS: str, 
                API_KEY: str,
                headlessRunStatus: bool,

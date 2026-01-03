@@ -1,6 +1,6 @@
 from ..hardwareInterface.roborockHighResInterface import roborockHighResInterface
 from ..hardwareInterface.roborockCoordinateMoveInterface import roborockCoordinateMoveInterface
-from ..hardwareInterface.controlRoborock import controlRoborock
+import subModules.hardwareInterface.controlRoborock as controlRoborock
 from ..robotState.robotGlobalState import robotGlobalState
 
 import os

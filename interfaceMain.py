@@ -56,7 +56,7 @@ if __name__ == "__main__":
         print(f"ERROR: .env file has not been properly created, or api key/ ip address has not been added to .env file")
         exit
 
-    robotGlobalStateRef = robotGlobalState(IP_ADDRESS=IP_ADDRESS,
+    robotGlobalStateRef = robotGlobalState.robotGlobalState(IP_ADDRESS=IP_ADDRESS,
                                            API_KEY=api_key,
                                            headlessRunStatus=headlessRun,
                                            performingAPICalls=performingAPICalls,

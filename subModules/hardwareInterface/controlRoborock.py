@@ -3,7 +3,7 @@ sys.path.append('..')
 import keyboard
 
 # Local Classes
-from hardwareInterface.roborockInterface import roborockInterface
+from ..hardwareInterface.roborockInterface import roborockInterface
 import arucoHandling
 
 # For Open CV
