@@ -1,5 +1,7 @@
 from ..hardwareInterface.roborockHighResInterface import roborockHighResInterface
 from ..hardwareInterface.roborockCoordinateMoveInterface import roborockCoordinateMoveInterface
+from ..hardwareInterface.controlRoborock import controlRoborock
+from ..robotState.robotGlobalState import robotGlobalState
 
 import os
 
@@ -9,11 +11,11 @@ from dotenv import load_dotenv
 # python3 -m subModules.printParsers.roborockGcodeParser
 # This command is only run for testing purposes
 class roborockGcodeParser:
-    def __init__(self, 
-                 roborockHighResInterfaceRef: roborockHighResInterface, 
-                 roborockCoordinateMoveInterfaceRef : roborockCoordinateMoveInterface,
-                 gcodeFileName):
 
+    def __init__(self, robotGlobalStateRef: robotGlobalState):
+        self.robotGlobalStateRef_ = robotGlobalStateRef
+
+    def runGcodeFile(self, gcodeFileName):
         with open("gcodeFiles/" + gcodeFileName, 'r') as file:
 
             linesRef = file.readlines()
@@ -30,30 +32,19 @@ class roborockGcodeParser:
                     if currLine[1] == "M":
                         print("detect M character")
                         moveValue = int(currLine[2:])
-                        print(moveValue)
+                        self.robotGlobalStateRef_.roborockCoordinateMoveInterfaceRef_.moveLidarBased(moveValue)
 
                     if currLine[1] == "R":
                         rotValue = int(currLine[2:])
                         print(rotValue)
+                        self.robotGlobalStateRef_.roborockCoordinateMoveInterfaceRef_.moveLidarBased(rotValue)
 
                     if currLine[1] == "A":
                         arucoValue = int(currLine[2:])
-                        print(arucoValue)
-
-
-# For testing script
-if __name__ == "__main__":
-    load_dotenv()
-
-    # Roborock API key so that git stops complaining
-    api_key = str(os.getenv("API_KEY"))
-    IP_ADDRESS = str(os.getenv("IP_ADDRESS"))
-    print("Address: " + api_key)
-
-    roborockHighResInterfaceRef = roborockHighResInterface(IP_ADDRESS= IP_ADDRESS, API_KEY=api_key)
-    roborockCoordinateMoevInterfaceRef = roborockCoordinateMoveInterface(IP_ADDRESS= IP_ADDRESS, API_KEY=api_key)
-
-    gcodeParserRef = roborockGcodeParser(roborockHighResInterfaceRef, 
-                                         roborockCoordinateMoevInterfaceRef, 
-                                         "test.gcode")
-    
+                        controlRoborock.moveToDesignatedArucoMarker(performingAPICalls=True, 
+                                                                    localRoborockInterface=self.robotGlobalStateRef_.robo, 
+                                                                    picam2= self.robotGlobalStateRef_.cameraReference_, 
+                                                                    aruco_marker_side_length= self.robotGlobalStateRef_.arucoMarkerSideLength_, 
+                                                                    desiredID=arucoValue, 
+                                                                    headlessRunStatus=self.robotGlobalStateRef_.headlessRunStatus_,
+                                                                    arucoAproxDirection=1)

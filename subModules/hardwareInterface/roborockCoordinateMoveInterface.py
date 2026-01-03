@@ -8,13 +8,12 @@ import numpy
 
 import subModules.hardwareInterface.roborockHighResInterface as roborockHighResInterface
 
-class roborockCoordinateMoveInterface:
+# Inherits the roborock high res interface for easy use of the move vectored functionality
+class roborockCoordinateMoveInterface(roborockHighResInterface.roborockHighResInterface):
     
     def __init__(self, IP_ADDRESS, API_KEY):
         self.IP_ADDRESS_ = IP_ADDRESS
         self.API_KEY_ = API_KEY
-        self.roborockHighResInterfaceReference = roborockHighResInterface.roborockHighResInterface(IP_ADDRESS=IP_ADDRESS, 
-                                                                                                   API_KEY=API_KEY)
 
     # returns two variables being the coordinate of the position represented by two integers that are in CM
     # and the rotation in degrees

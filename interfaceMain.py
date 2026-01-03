@@ -7,10 +7,12 @@ import cv2
 print(cv2.__version__)
 
 # Local python script imports
-import hardwareInterface.cameraConfig as cameraConfig
-import hardwareInterface.roborockInterface as roborockInterface
-import hardwareInterface.roborockHighResInterface as roborockHighResInterface
-import hardwareInterface.controlRoborock as controlRoborock
+import subModules.hardwareInterface.cameraConfig as cameraConfig
+import subModules.hardwareInterface.roborockInterface as roborockInterface
+import subModules.hardwareInterface.roborockHighResInterface as roborockHighResInterface
+import subModules.hardwareInterface.controlRoborock as controlRoborock
+import subModules.printParsers.roborockGcodeParser as roborockGcodeParser
+import subModules.robotState.robotGlobalState as robotGlobalState
 
 # Main script that handles the MobiPrint computer vision based printing pipeline
 
@@ -54,32 +56,23 @@ if __name__ == "__main__":
         print(f"ERROR: .env file has not been properly created, or api key/ ip address has not been added to .env file")
         exit
 
-    cameraReference = cameraConfig.configureCamera()
+    robotGlobalStateRef = robotGlobalState(IP_ADDRESS=IP_ADDRESS,
+                                           API_KEY=api_key,
+                                           headlessRunStatus=headlessRun,
+                                           performingAPICalls=performingAPICalls,
+                                           aruco_marker_side_length=aruco_marker_side_length)
 
     # Create interfaces, these objects hold wrapper functions for handling API calls and other complicated functionality
     localRoborockInterface = roborockHighResInterface.roborockHighResInterface(IP_ADDRESS, api_key) 
 
     # Intiate manual control
-    if performingAPICalls:
-        localRoborockInterface.initiateHighResManualControl()
+    robotGlobalStateRef.initiateRobotSubsystems()
 
-    print("Status of headless " + str(headlessRun))
-
-    # Move through markers with monotonically increasing ids
-    for markerID in range(0, 4):
-        print("Moving to marker ID " + str(markerID))
-        controlRoborock.moveToDesignatedArucoMarker(performingAPICalls, 
-                                                    localRoborockInterface, 
-                                                    cameraReference, 
-                                                    aruco_marker_side_length, 
-                                                    desiredID=markerID, 
-                                                    headlessRunStatus=headlessRun,
-                                                    arucoAproxDirection=1)
-
+    # THIS IS WHERE THE MAIN ROBOT CODE WILL BE RUN
 
     # if performingAPICalls:
     #     localRoborockInterface.disableHighResManualControl()
 
-    cameraReference.stop()
+    robotGlobalStateRef.stopRobotSubsystems()
     cv2.destroyAllWindows()             
 
