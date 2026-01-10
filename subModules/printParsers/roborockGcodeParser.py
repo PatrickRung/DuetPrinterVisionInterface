@@ -2,6 +2,8 @@ from ..hardwareInterface.roborockHighResInterface import roborockHighResInterfac
 from ..hardwareInterface.roborockCoordinateMoveInterface import roborockCoordinateMoveInterface
 import subModules.hardwareInterface.controlRoborock as controlRoborock
 from ..robotState.robotGlobalState import robotGlobalState
+from ..robotState.printState import pathObjRepresentation
+from ..constants import constants
 
 import os
 
@@ -41,10 +43,35 @@ class roborockGcodeParser:
 
                     if currLine[1] == "A":
                         arucoValue = int(currLine[2:])
-                        controlRoborock.moveToDesignatedArucoMarker(performingAPICalls=True, 
-                                                                    localRoborockInterface=self.robotGlobalStateRef_.robo, 
-                                                                    picam2= self.robotGlobalStateRef_.cameraReference_, 
-                                                                    aruco_marker_side_length= self.robotGlobalStateRef_.arucoMarkerSideLength_, 
-                                                                    desiredID=arucoValue, 
-                                                                    headlessRunStatus=self.robotGlobalStateRef_.headlessRunStatus_,
+                        controlRoborock.moveToDesignatedArucoMarker(self.robotGlobalStateRef_, 
+                                                                    desiredID=arucoValue,
                                                                     arucoAproxDirection=1)
+
+    # TODO needs to consider case where the aruco marker is out of range and needs to have hardcoded rotation that happen
+    # to place next aruco marker approximately in view
+    def runRoborockFromObjPathRef(self, path: pathObjRepresentation): 
+
+        self.robotGlobalStateRef_.initiateRobotSubsystems()
+        
+        # We assume that the first aruco marker 0, is already in view when we start the program.
+        # And that the aruco marker is directly in front of robot (straight path to marker)
+        for currArucoMarker in range(0, path):
+
+            if currArucoMarker == 0:
+                controlRoborock.moveToDesignatedArucoMarker(self.robotGlobalStateRef_, 
+                                                            desiredID=currArucoMarker,
+                                                            arucoAproxDirection=1)
+                # TODO tune parameter to get roborock to move directly over the Aruco marker
+                self.robotGlobalStateRef_.roborockCoordinateMoveInterfaceRef_.moveLidarBased(constants.CAMERA_RANGE_LIMIT_ARUCO_DISTANCE)
+                
+            elif:
+                # If not the first marker, there is chance that marker is out of view, thus
+                # we must figure out where it is
+
+                # TODO move to general direction of marker and move toward the object
+                
+
+
+
+
+

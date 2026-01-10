@@ -4,6 +4,7 @@ import keyboard
 
 # Local Classes
 from ..hardwareInterface.roborockInterface import roborockInterface
+from ..robotState.robotGlobalState import robotGlobalState
 import arucoHandling
 
 # For Open CV
@@ -120,12 +121,8 @@ def get_camera_pivot_rot(rvec):
 # Function assumes that the aruco marker is within view
 # if aruco aprox directinon is > 0, that signifies the roborock should rotate to the right 
 # to find the next aruco marker, if the aprox direction is < 0, then the roborock turns left
-def moveToDesignatedArucoMarker(performingAPICalls, 
-                                localRoborockInterface, 
-                                picam2, 
-                                aruco_marker_side_length, 
+def moveToDesignatedArucoMarker(robotGlobalStateRef: robotGlobalState, 
                                 desiredID, 
-                                headlessRunStatus, 
                                 arucoAproxDirection):
     # Calibration parameters yaml file
     camera_calibration_parameters_filename = 'calibration_chessboard.yaml'
@@ -158,7 +155,7 @@ def moveToDesignatedArucoMarker(performingAPICalls,
 
     # Main loop for handling detection
     while True:
-        frame = picam2.capture_array()
+        frame = robotGlobalStateRef.cameraReference_.capture_array()
         print("Desired ID: " + str(desiredID))
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         corners, ids, rejected = detector.detectMarkers(gray)
@@ -172,7 +169,7 @@ def moveToDesignatedArucoMarker(performingAPICalls,
 
         cv2.aruco.drawDetectedMarkers(frame, corners, ids)
 
-        if not headlessRunStatus:
+        if not robotGlobalStateRef.headlessRunStatus_:
             print("this happen")
             cv2.imshow("Frame", frame)
         else:
@@ -200,11 +197,11 @@ def moveToDesignatedArucoMarker(performingAPICalls,
         if currentRobotMoveState == roborockMoveState.LOOKING_FOR_ARUCO_MARKER:
             # Roborock rotate to find next aruco marker
             if arucoIndex == -1:
-                if performingAPICalls:
+                if robotGlobalStateRef.performingAPICalls_:
                     if arucoAproxDirection > 0:
-                        localRoborockInterface.moveVectored(0, 10)
+                        robotGlobalStateRef.roborockHighResInterfaceRef_.moveVectored(0, 10)
                     else:
-                        localRoborockInterface.moveVectored(0, -10)
+                        robotGlobalStateRef.roborockHighResInterfaceRef_.moveVectored(0, -10)
                     print(ids)
                     time.sleep(2)
             else:
@@ -215,7 +212,7 @@ def moveToDesignatedArucoMarker(performingAPICalls,
             if arucoIndex != -1:
                 rvecs, tvecs, obj_points = cv2.aruco.estimatePoseSingleMarkers(
                     corners,
-                    aruco_marker_side_length,
+                    robotGlobalStateRef.arucoMarkerSideLength_,
                     cameraMatrix=mtx,
                     distCoeffs=dst)
 
@@ -235,8 +232,8 @@ def moveToDesignatedArucoMarker(performingAPICalls,
                 
                 if desiredAngle > rotationMarginOfError or desiredAngle < -rotationMarginOfError:
                     print("change angle")
-                    if performingAPICalls:
-                        localRoborockInterface.moveVectored(0, desiredAngle / 2)
+                    if robotGlobalStateRef.performingAPICalls_:
+                        robotGlobalStateRef.roborockHighResInterfaceRef_.moveVectored(0, desiredAngle / 2)
                 # Goal is to get the roborock within 16 cm of the Aruco marker
                 elif roborockArucoOffset < defaultCamBaseDist + satisfactoryRange:
                     print("Fin")
@@ -244,8 +241,8 @@ def moveToDesignatedArucoMarker(performingAPICalls,
                 else:
                     print("moveForward")
                     # For the purpose of my initial testing this is reversed
-                    if performingAPICalls:
-                        localRoborockInterface.moveVectored(0.1, 0)
+                    if robotGlobalStateRef.performingAPICalls_:
+                        robotGlobalStateRef.roborockHighResInterfaceRef_.moveVectored(0.1, 0)
                         # Give some time for Roborock to coorect
                         cv2.waitKey(200)
         elif currentRobotMoveState == roborockMoveState.REACHED_DESTINATION_UNDERGOING_VERIFICATION:
@@ -262,7 +259,7 @@ def moveToDesignatedArucoMarker(performingAPICalls,
                 print("moved too far")
                 # Reset timer and move roborock back until marker is in view
                 reachedDestVerificationTimer = None
-                if performingAPICalls:
-                    localRoborockInterface.moveVectored(-0.1, 0)
+                if robotGlobalStateRef.performingAPICalls_:
+                    robotGlobalStateRef.roborockHighResInterfaceRef_.moveVectored(-0.1, 0)
                     # Give time for camera to readjust
                     cv2.waitKey(20)

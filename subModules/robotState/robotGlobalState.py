@@ -49,6 +49,10 @@ class robotGlobalState:
         self.cameraReference_ = cameraConfig.configureCamera()
         self.roborockHighResInterfaceRef_ = roborockHighResInterface.roborockHighResInterface(IP_ADDRESS=IP_ADDRESS, API_KEY=API_KEY) 
         self.roborockCoordinateMoveInterfaceRef_ = roborockCoordinateMoveInterface(IP_ADDRESS=IP_ADDRESS, API_KEY=API_KEY)
+        self.realWorldPathEstimationRef_ = realWorldPathEstimation()
+        self.currPosCoordinate = None # Coordinates are stores in [X, Y] points in a cartesian plane where the center of the plane is the center
+                                      # of the ARuco marker 0
+        self.currRot = 0              # Rotation of the roborock relative to the first aruco marker
 
 
     def initiateRobotSubsystems(self):
@@ -63,3 +67,10 @@ class robotGlobalState:
 
         self.cameraReference_.stop()
 
+# Wrapper for pathObjRepresentation that contains similar data however will be estimated based
+# on the orientation of the roborock and camera data
+class realWorldPathEstimation(pathObjRepresentation):
+    def __init__(self, finArucoVal):
+        self.finArucoVal_ = finArucoVal
+
+    
