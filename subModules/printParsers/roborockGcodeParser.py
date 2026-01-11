@@ -70,6 +70,7 @@ class roborockGcodeParser:
 
                 # TODO move to general direction of marker and move toward the object
                 
+                
 
 
 
