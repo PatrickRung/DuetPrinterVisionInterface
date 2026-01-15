@@ -1,17 +1,8 @@
 import type { NextConfig } from "next";
+import { useState } from "react";
 
 const nextConfig: NextConfig = {
   /* config options here */
-};
-
-const path = require('path');
-require('dotenv').config({
-  // Load external .env
-  path: path.resolve(__dirname, '../../.env'),
-});
-
-module.exports = {
-  reactStrictMode: true,
 };
 
 export default nextConfig;

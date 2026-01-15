@@ -11,6 +11,6 @@ export class Maprender {
     }
 
     draw (data : RawMapData) {
-        this.ctx.putImageData()
+        // this.ctx.putImageData()
     }
 }

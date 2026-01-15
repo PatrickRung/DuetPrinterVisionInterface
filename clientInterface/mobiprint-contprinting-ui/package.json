@@ -12,7 +12,12 @@
     "dotenv": "^17.2.3",
     "next": "16.1.1",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "react-query": "^3.39.3",
+    "reconnecting-eventsource": "^1.6.2",
+    "semaphore": "^1.1.0",
+    "use-long-press": "^3.2.0",
+    "zustand": "^4.4.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
