@@ -104,6 +104,40 @@ class roborockCoordinateMoveInterface(roborockHighResInterface.roborockHighResIn
         print(response)
         print(response.content)
 
+    # Wrapper for Roborock GoTo commands
+    # Takes int he coordinates of the position to go to
+    def roborockGoTo(self, desiredLoc):
+        initPos, rot = self.getRoborockPos()
+
+        newPosX = desiredLoc[0]
+        newPosY = desiredLoc[1]
+        
+        tupleCoord = (int(newPosX), int(newPosY))
+        print(tupleCoord)
+
+        url = "http://" + self.IP_ADDRESS_ + "/api/v2/robot/capabilities/GoToLocationCapability"
+        headers = {
+            "accept": "*/*",
+            "Authorization": "Basic " + self.API_KEY_ + "=",
+            "Content-Type": "application/json"
+        }
+
+        payload = {
+            "action": "goto",
+            "name": "string",
+            "coordinates": {
+                "x": newPosX,
+                "y": newPosY
+            },
+            "id": "string",
+            "metaData": {}  
+        }
+
+        # Use json=payload to let requests handle JSON encoding
+        response = requests.put(url, headers=headers, json=payload)
+        print(response)
+        print(response.content)
+
     # Distance is the length of the desired distance for the roborock to travel forward in CM
     # the sign in front of desired rot determines the direction to move, - being left and +
     # being right
