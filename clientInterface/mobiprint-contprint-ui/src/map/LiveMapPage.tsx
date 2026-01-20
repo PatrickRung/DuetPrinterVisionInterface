@@ -92,12 +92,6 @@ const LiveMapPage = (props: Record<string, never> ): React.ReactElement => {
         rawMap={mapData}
         paletteMode={theme.palette.mode}
         trackSegmentSelectionOrder={mapSegmentationProperties ? mapSegmentationProperties.customOrderSupport : false}
-
-        supportedCapabilities={{
-            [Capability.MapSegmentation]: mapSegmentationCapabilitySupported,
-            [Capability.ZoneCleaning]: zoneCleaningCapabilitySupported,
-            [Capability.GoToLocation]: goToLocationCapabilitySupported
-        }}
     />;
 };
 

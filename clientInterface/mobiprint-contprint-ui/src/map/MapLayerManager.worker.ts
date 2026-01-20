@@ -3,11 +3,11 @@ import {RawMapLayer} from "../api";
 
 let cachedLayers: Array<RawMapLayer> = [];
 
-self.postMessage({
+globalThis.postMessage({
     ready: true
 });
 
-self.addEventListener( "message", ( evt ) => {
+globalThis.addEventListener( "message", ( evt ) => {
     //According to SonarJS S2819, this might be problematic
     //I honestly have no idea if this check is actually needed in a webworker context, but I'll do as the tool says.
     if (evt.origin !== "") {
@@ -28,7 +28,7 @@ self.addEventListener( "message", ( evt ) => {
         evt.data.selectedSegmentIds
     );
 
-    self.postMessage(
+    globalThis.postMessage(
         {
             pixelData: rendered.pixelData.buffer,
             width: rendered.width,

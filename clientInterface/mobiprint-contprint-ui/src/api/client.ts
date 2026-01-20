@@ -114,7 +114,7 @@ valetudoAPI.interceptors.response.use(response => {
                     By just calling location.reload() here, we avoid having to somehow inject the currentCommitId
                     value from this mostly stateless api layer into the React application state
                  */
-                location.reload();
+                window.location.reload();
             }
         }
     }

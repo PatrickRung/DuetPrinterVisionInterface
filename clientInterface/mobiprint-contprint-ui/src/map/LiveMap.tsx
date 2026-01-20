@@ -1,5 +1,4 @@
 import BaseMap, {MapContainer, MapProps, MapState, usePendingMapAction} from "./BaseMap";
-import {Capability} from "../api/index.ts";
 import GoToTargetClientStructure from "./structures/client_structures/GoToTargetClientStructure";
 import {ActionsContainer} from "./Styled";
 import SegmentActions from "./actions/live_map_actions/SegmentActions";
@@ -17,11 +16,6 @@ export type LiveMapMode = "segments" | "zones" | "goto" | "none";
 const LIVE_MAP_MODE_LOCAL_STORAGE_KEY = "live-map-mode";
 
 interface LiveMapProps extends MapProps {
-    supportedCapabilities: {
-        [Capability.MapSegmentation]: boolean,
-        [Capability.ZoneCleaning]: boolean,
-        [Capability.GoToLocation]: boolean
-    }
 }
 
 interface LiveMapState extends MapState {
@@ -38,15 +32,9 @@ class LiveMap extends BaseMap<LiveMapProps, LiveMapState> {
 
         this.supportedModes = [];
 
-        if (props.supportedCapabilities[Capability.MapSegmentation]) {
-            this.supportedModes.push("segments");
-        }
-        if (props.supportedCapabilities[Capability.ZoneCleaning]) {
-            this.supportedModes.push("zones");
-        }
-        if (props.supportedCapabilities[Capability.GoToLocation]) {
-            this.supportedModes.push("goto");
-        }
+        this.supportedModes.push("segments");
+        this.supportedModes.push("zones");
+        this.supportedModes.push("goto");
 
         let modeIdxToUse = 0;
         try {
