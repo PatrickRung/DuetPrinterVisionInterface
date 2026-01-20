@@ -83,7 +83,7 @@ import { floorObject } from "./utils";
 import {preprocessMap} from "./mapUtils";
 import ReconnectingEventSource from "reconnecting-eventsource";
 
-export const valetudoAPIBaseURL = "./api/v2";
+export const valetudoAPIBaseURL = "/api/v2";
 export const valetudoAPI = axios.create({
     baseURL: valetudoAPIBaseURL,
 });
