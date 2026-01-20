@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 // import App from './App';
 import reportWebVitals from './reportWebVitals';
-import LiveMapPage from "./map/LiveMapPage";
+import LiveMapPage from "./map/LiveMapPage.tsx";
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
