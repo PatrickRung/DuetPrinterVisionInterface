@@ -13,6 +13,8 @@ import subModules.hardwareInterface.roborockHighResInterface as roborockHighResI
 import subModules.hardwareInterface.controlRoborock as controlRoborock
 import subModules.printParsers.roborockGcodeParser as roborockGcodeParser
 import subModules.robotState.robotGlobalState as robotGlobalState
+from subModules.printParsers.roborockGcodeParser import pathObjRepresentation
+
 
 # Main script that handles the MobiPrint computer vision based printing pipeline
 
@@ -33,6 +35,14 @@ if __name__ == "__main__":
         if '-h' in sys.argv:
             headlessRun = True
 
+    # FOR TESTING!
+    # Generate path, should be stored in another folder. This should be essentially the middleware
+    # representation between the slicing functionality of this project and the roborock control side
+    # WILL NORMALLY BE NOT MANUALLY SUPPLIED FORM ANOTHER FILE AND INSTEAD PASSED THROUGH METHOD
+    pathObjVectorRef = None
+
+    if not isinstance(pathObjVectorRef, pathObjRepresentation):
+        raise ValueError("pathObject is invalid object type!")
 
     # Loads the dotenv
     load_dotenv()
@@ -69,10 +79,19 @@ if __name__ == "__main__":
     robotGlobalStateRef.initiateRobotSubsystems()
 
     # THIS IS WHERE THE MAIN ROBOT CODE WILL BE RUN
+    rGcodeParserRef = roborockGcodeParser.roborockGcodeParser(robotGlobalStateRef=robotGlobalStateRef)
+
+    # Parse gcode instructions generatd by user or the MobiPrint slicer
+    
 
     # if performingAPICalls:
     #     localRoborockInterface.disableHighResManualControl()
 
     robotGlobalStateRef.stopRobotSubsystems()
-    cv2.destroyAllWindows()             
+    cv2.destroyAllWindows()        
+
+# For testing
+def createTestingPath() -> pathObjRepresentation:
+    
+    pass
 

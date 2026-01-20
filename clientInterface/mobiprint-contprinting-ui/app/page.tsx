@@ -4,6 +4,7 @@ import fetchMap from "./src/mapHandler/mapFetcher"
 import { useEffect, useState } from 'react';
 import PreviewLiveMap from "./src/mapping/PreviewLiveMap";
 import ValetudoMapCanvas from "./src/mapHandler/valetudoMapCanvas"
+import LiveMapPage from "./src/map/LiveMapPage";
 
 export default function Home() {
 const [data, setData] = useState<any>(null);
@@ -43,7 +44,7 @@ const [data, setData] = useState<any>(null);
       <h1>Roborock IP: {process.env.NEXT_PUBLIC_IP_ADDRESS}</h1>
       <h1>Roborock API key: {process.env.NEXT_PUBLIC_API_KEY}</h1>
       <h1>Robot Map State</h1>
-      <ValetudoMapCanvas mapData={data} />
+      <LiveMapPage/>
     </main>
   );
 }

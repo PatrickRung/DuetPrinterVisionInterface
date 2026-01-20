@@ -46,7 +46,10 @@ class robotGlobalState:
             raise Exception("aruco_marker_side_length parameter not defined")
         self.arucoMarkerSideLength_ = aruco_marker_side_length 
         
-        self.cameraReference_ = cameraConfig.configureCamera()
+        # If not using camera dont initiate
+        if not headlessRunStatus:
+            self.cameraReference_ = cameraConfig.configureCamera()
+
         self.roborockHighResInterfaceRef_ = roborockHighResInterface.roborockHighResInterface(IP_ADDRESS=IP_ADDRESS, API_KEY=API_KEY) 
         self.roborockCoordinateMoveInterfaceRef_ = roborockCoordinateMoveInterface(IP_ADDRESS=IP_ADDRESS, API_KEY=API_KEY)
         self.realWorldPathEstimationRef_ = realWorldPathEstimation()
