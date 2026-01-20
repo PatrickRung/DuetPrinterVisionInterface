@@ -23,12 +23,39 @@ interface GoToActionsProperties {
     onClear(): void;
 }
 
+// Declare this as a single instance per file
+const destinationsForRoborock : GoToTargetClientStructure[] = []
+
+function checkAproxEquals(val1: number, val2: number) {
+    var diff = Math.abs(val1 - val2);
+    return diff < 0.01
+}
+
+
 const GoToActions = (
     props: GoToActionsProperties
 ): React.ReactElement => {
+    // Create list for target points:
+
     const {goToTarget, convertPixelCoordinatesToCMSpace, onClear} = props;
     const [integrationHelpDialogOpen, setIntegrationHelpDialogOpen] = React.useState(false);
     const [integrationHelpDialogPayload, setIntegrationHelpDialogPayload] = React.useState("");
+
+    // Verify coordinate is not already in destinationsForRoborock
+    let destContainsCoord = false;
+    for (let i = 0; i < destinationsForRoborock.length && !destContainsCoord; i++) {
+        var currCoord = destinationsForRoborock[i];
+        if (typeof goToTarget !== "undefined" && 
+            checkAproxEquals(goToTarget.x0, currCoord.x0) && 
+            checkAproxEquals(goToTarget.y0, currCoord.y0)) {
+                destContainsCoord = true;
+        }
+    }
+
+    if (!destContainsCoord && typeof goToTarget !== "undefined") {
+        destinationsForRoborock.push(goToTarget);
+        console.log(destinationsForRoborock)
+    }
 
     const {data: status} = useRobotStatusQuery((state) => {
         return state.value;
