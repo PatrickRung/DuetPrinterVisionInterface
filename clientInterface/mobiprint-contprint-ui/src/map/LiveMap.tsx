@@ -6,6 +6,7 @@ import SegmentLabelMapStructure from "./structures/map_structures/SegmentLabelMa
 import ZoneActions from "./actions/live_map_actions/ZoneActions";
 import ZoneClientStructure from "./structures/client_structures/ZoneClientStructure";
 import GoToActions from "./actions/live_map_actions/GoToActions";
+import {clearDestinations} from "./actions/live_map_actions/GoToActions";
 import {TapTouchHandlerEvent} from "./utils/touch_handling/events/TapTouchHandlerEvent";
 import React from "react";
 import {LiveMapModeSwitcher} from "./LiveMapModeSwitcher";
@@ -277,6 +278,7 @@ class LiveMap extends BaseMap<LiveMapProps, LiveMapState> {
                                     if (s.type === GoToTargetClientStructure.TYPE) {
                                         this.structureManager.removeClientStructure(s);
                                     }
+                                    clearDestinations()
                                 });
                                 this.updateState();
 

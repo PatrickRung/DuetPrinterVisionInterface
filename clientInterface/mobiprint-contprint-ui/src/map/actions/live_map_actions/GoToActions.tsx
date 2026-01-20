@@ -31,6 +31,11 @@ function checkAproxEquals(val1: number, val2: number) {
     return diff < 0.01
 }
 
+export function clearDestinations() {
+    // Clear contents of destinationsForRoborock
+    destinationsForRoborock.length = 0
+}
+
 
 const GoToActions = (
     props: GoToActionsProperties
