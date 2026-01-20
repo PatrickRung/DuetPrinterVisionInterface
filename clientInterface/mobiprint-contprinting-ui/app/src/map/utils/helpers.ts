@@ -1,10 +1,13 @@
-import {PointCoordinates} from "./types";
+"use client";
 
+import {PointCoordinates} from "./types";
 
 // noinspection JSDeprecatedSymbols
 const isSufferingFromSafari = (
-    /iPad|iPhone|iPod/.test(window.navigator.userAgent || "") ||
-    window.navigator.vendor === "Apple Computer, Inc."
+    typeof window !== "undefined" && (
+        /iPad|iPhone|iPod/.test(window.navigator.userAgent || "") ||
+        window.navigator.vendor === "Apple Computer, Inc."
+    )
 );
 const _considerHiDPI = function considerHiDPI(val: number): number {
     return Math.round(val * window.devicePixelRatio);
@@ -16,8 +19,10 @@ const _doNotConsiderHiDPI = function doNotConsiderHiDPI(val: number): number {
 export const considerHiDPI: (val: number) => number = !isSufferingFromSafari ? _considerHiDPI : _doNotConsiderHiDPI;
 
 export const isMobile =
-    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    typeof navigator !== "undefined" && (
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+    )
 
 export function clampMapScalingFactorFactor(currentScaleFactor: number, factor: number) {
     const LIMITS = {
