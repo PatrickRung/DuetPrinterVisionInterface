@@ -3,7 +3,7 @@ import {Capability, prefetchObstacleImagesProperties, useMapSegmentationProperti
 import LiveMap from "./LiveMap";
 import {useCapabilitiesSupported} from "../CapabilitiesProvider";
 import React from "react";
-import {useQueryClient} from "@tanstack/react-query";
+import {useQueryClient, QueryClientProvider} from "@tanstack/react-query";
 
 
 const Container = styled(Box)({
