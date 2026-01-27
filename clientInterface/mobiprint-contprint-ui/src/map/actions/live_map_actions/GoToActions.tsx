@@ -30,23 +30,30 @@ class MultiPointGoToState {
 
     // Properties
     destinationsForRoborock : GoToTargetClientStructure[];
+    currDestination : GoToTargetClientStructure | undefined;
     prevPoint: number[] | null;
     structureManagerRef: StructureManager | null;
     existingTimer: boolean;                                 // Denotes whether or not there is a timer active 
                                                             // !! DO NOT CREATED MULTIPLE TIMERS CHECK THIS VAR
+    withinDesiredAreaCount: number
 
     constructor() {
         this.destinationsForRoborock = [];
         this.prevPoint = null;
+        this.currDestination = undefined;
         this.structureManagerRef = getStructureManager();
         this.existingTimer = false;
+        this.withinDesiredAreaCount = 0
     }
 
     // Run this every 5 seconds and if not go to command is received, that signifies that 
     // the go to command has received a response
+    // Loop ends when withinDesiredAreaCount achieves 3 polls
     goToCommandHeartbeatCheck() {
-
-        console.log("print up to date pos " + getRoborockGlobalPos())
+        if (this.structureManagerRef == null || this.currDestination == null) {
+            console.log("Structure manager not loaded")
+            return;
+        }
 
         let currPoint = getRoborockGlobalPos();
 
@@ -54,12 +61,36 @@ class MultiPointGoToState {
             this.prevPoint = currPoint;
         }
         // Check if we stayed in the same spot for more than 1 iteration, then reset go to state
-        else if (checkAproxEquals(currPoint[0], this.prevPoint[0]) && 
-                checkAproxEquals(currPoint[1], this.prevPoint[1])) {
-            console.log("DONE!");
-            this.existingTimer = false;
-            this.prevPoint = null;
-            return;
+        else if (checkAproxEquals(currPoint[0], this.prevPoint[0], 0.01) && 
+                checkAproxEquals(currPoint[1], this.prevPoint[1], 0.01)) {
+
+            // If the position is the same, we could be stuck or at the start so code in this scoped
+            // handles that case
+            console.log("Stationary at " + getRoborockGlobalPos() + " : TIMESTAMP: " + Date.now())
+
+            let pointsCM = this.structureManagerRef.convertPixelCoordinatesToCMSpace({x: this.currDestination.x0, y: this.currDestination.x0});
+            console.log("Desired "  + pointsCM.x + " " + pointsCM.y)
+
+            // Check if we reached destination (We accept anywhere within 100 CM range)
+            let magDiff = Math.pow(Math.pow(currPoint[0] - pointsCM.x, 2) + Math.pow(currPoint[1] - pointsCM.y, 2), 0.5)
+            if (this.currDestination != undefined && magDiff < 150) {
+
+                // Update state
+                this.withinDesiredAreaCount++;
+
+                // Needs to stay at end poll for 3 loops
+                if (this.withinDesiredAreaCount >= 5) {
+                    this.existingTimer = false;
+                    this.prevPoint = null;
+
+                    console.log("DONE!");   
+                    return;
+                }
+            }
+            else {
+                console.log("Did not make it")
+                this.withinDesiredAreaCount = 0;
+            }
         }
 
         // Update prevPoint
@@ -67,7 +98,7 @@ class MultiPointGoToState {
 
         setTimeout(() => {
             this.goToCommandHeartbeatCheck()
-        }, 5000)
+        }, 3000)
     }
 
     initiateGoToCommandChecker() {
@@ -88,8 +119,8 @@ class MultiPointGoToState {
         for (let i = 0; i < this.destinationsForRoborock.length && !destContainsCoord; i++) {
             var currCoord = this.destinationsForRoborock[i];
             if (typeof goToTarget !== "undefined" && 
-                checkAproxEquals(goToTarget.x0, currCoord.x0) && 
-                checkAproxEquals(goToTarget.y0, currCoord.y0)) {
+                checkAproxEquals(goToTarget.x0, currCoord.x0, 0.01) && 
+                checkAproxEquals(goToTarget.y0, currCoord.y0, 0.01)) {
                     destContainsCoord = true;
             }
         }
@@ -100,24 +131,31 @@ class MultiPointGoToState {
     }
 
     executeConsecGoTo() {
-        for (let i = 0; i < this.destinationsForRoborock.length; i++) {
-            let recentGoTo = this.destinationsForRoborock.pop() 
-            // Refect structure manager
-            this.structureManagerRef = getStructureManager()
-            if (recentGoTo != null && this.structureManagerRef != null) {
-                let CMCoords = this.structureManagerRef.convertPixelCoordinatesToCMSpace({x: recentGoTo.x0, y: recentGoTo.y0})
-                sendGoToCommand(CMCoords);
-            }
+        let recentGoTo = this.destinationsForRoborock.pop() 
+
+        // Refetch structure manager
+        this.structureManagerRef = getStructureManager();
+        if (recentGoTo == undefined || 
+            this.structureManagerRef == null || 
+            this.existingTimer) {
+                console.log("terminate")
+                return;
         }
+
+        this.currDestination = recentGoTo;
+        let CMCoords = this.structureManagerRef.convertPixelCoordinatesToCMSpace({x: recentGoTo.x0, y: recentGoTo.y0})
+        sendGoToCommand(CMCoords);
+        this.withinDesiredAreaCount = 0;
+
         this.initiateGoToCommandChecker()
     }
 }
 
 var multiPointGoToRef = new MultiPointGoToState() 
 
-function checkAproxEquals(val1: number, val2: number) {
+function checkAproxEquals(val1: number, val2: number, thresh: number) {
     var diff = Math.abs(val1 - val2);
-    return diff < 0.01
+    return diff < thresh;
 }
 
 export function clearDestinations() {

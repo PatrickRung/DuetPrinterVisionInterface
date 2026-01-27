@@ -20,7 +20,7 @@ import {PointCoordinates} from "./utils/types";
 import { create } from "zustand";
 import {clampMapScalingFactorFactor, considerHiDPI} from "./utils/helpers";
 
-// Export roborock location
+// Export roborock location in CM
 var roborockGlobalPos: number[] | null
 var structureManagerGlobalRef : StructureManager | null
 
@@ -221,7 +221,6 @@ abstract class BaseMap<P, S> extends React.Component<P & MapProps, S & MapState 
 
     protected onMapUpdate() : void {
         //This can be overridden to do something when the map is updated with a new one
-        console.log("map update" + Date.now())
 
         // Update roborock global pos
         roborockGlobalPos = this.props.rawMap.entities[2].points;
