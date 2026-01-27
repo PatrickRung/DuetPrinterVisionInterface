@@ -82,8 +82,11 @@ class MultiPointGoToState {
                 if (this.withinDesiredAreaCount >= 5) {
                     this.existingTimer = false;
                     this.prevPoint = null;
+                    this.currDestination = undefined;
 
-                    console.log("DONE!");   
+                    // Trigger next go to!
+                    console.log("fin execution")
+                    this.executeConsecGoTo()
                     return;
                 }
             }
@@ -126,12 +129,18 @@ class MultiPointGoToState {
         }
 
         if (!destContainsCoord && typeof goToTarget !== "undefined") {
+            console.log("Add " + goToTarget.x0 + ", " + goToTarget.y0)
             this.destinationsForRoborock.push(goToTarget);
         }
     }
 
     executeConsecGoTo() {
-        let recentGoTo = this.destinationsForRoborock.pop() 
+        console.log(this.destinationsForRoborock.length)
+        if (this.destinationsForRoborock.length == 0) {
+            return;
+        }
+
+        let recentGoTo = this.destinationsForRoborock.shift() 
 
         // Refetch structure manager
         this.structureManagerRef = getStructureManager();
@@ -173,9 +182,15 @@ const GoToActions = (
     const [integrationHelpDialogPayload, setIntegrationHelpDialogPayload] = React.useState("");
 
     // Verify coordinate is not already in destinationsForRoborock
-    if (typeof goToTarget !== "undefined") {
-        multiPointGoToRef.updateDestinations(goToTarget);
-    }
+    // Only update destinations when goToTarget actually changes
+    // How this works is that it checks whether goToTarget?.x0, goToTarget?.y0 have changed
+    // If so it will then re run this code. Otherwise react will call this code every time it renders
+    // which is frequent thus keeping the list populated
+    React.useEffect(() => {
+        if (goToTarget !== undefined) {
+            multiPointGoToRef.updateDestinations(goToTarget);
+        }
+    }, [goToTarget?.x0, goToTarget?.y0]); // Only run when coordinates change
 
     const {data: status} = useRobotStatusQuery((state) => {
         return state.value;
