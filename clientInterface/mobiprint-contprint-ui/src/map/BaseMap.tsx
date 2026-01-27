@@ -20,6 +20,21 @@ import {PointCoordinates} from "./utils/types";
 import { create } from "zustand";
 import {clampMapScalingFactorFactor, considerHiDPI} from "./utils/helpers";
 
+// Export roborock location
+var roborockGlobalPos: number[] | null
+var structureManagerGlobalRef : StructureManager | null
+
+export function getRoborockGlobalPos() : number[] {
+    if (roborockGlobalPos == null) {
+        return [0, 0];
+    }
+    return roborockGlobalPos
+}
+
+export function getStructureManager() : StructureManager | null {
+    return structureManagerGlobalRef;
+}
+
 export interface MapProps {
     rawMap: RawMapData;
     paletteMode: PaletteMode;
@@ -83,6 +98,9 @@ abstract class BaseMap<P, S> extends React.Component<P & MapProps, S & MapState 
 
 
         this.structureManager = new StructureManager();
+        // When this object is instantiated set global ref strucutre manager for reference in other 
+        // parts of the codebase
+        structureManagerGlobalRef = this.structureManager;
         this.structureManager.setPixelSize(this.props.rawMap.pixelSize);
 
         this.mapLayerManager = new MapLayerManager();
@@ -203,6 +221,10 @@ abstract class BaseMap<P, S> extends React.Component<P & MapProps, S & MapState 
 
     protected onMapUpdate() : void {
         //This can be overridden to do something when the map is updated with a new one
+        console.log("map update" + Date.now())
+
+        // Update roborock global pos
+        roborockGlobalPos = this.props.rawMap.entities[2].points;
     }
 
     componentWillUnmount(): void {
