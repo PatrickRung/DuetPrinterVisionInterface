@@ -26,6 +26,14 @@ interface GoToActionsProperties {
     onClear(): void;
 }
 
+// Path traverse state machine
+const RobotGoToStates = Object.freeze({
+    INIT: "Initalized",
+    TRAVERSING: "Traversing",
+    FIN: "Finished",
+    NODEST: "No destination"
+});
+
 class MultiPointGoToState {
 
     // Properties
@@ -35,15 +43,41 @@ class MultiPointGoToState {
     structureManagerRef: StructureManager | null;
     existingTimer: boolean;                                 // Denotes whether or not there is a timer active 
                                                             // !! DO NOT CREATED MULTIPLE TIMERS CHECK THIS VAR
-    withinDesiredAreaCount: number
+    withinDesiredAreaCount: number;
+    hardCoded: boolean;
+    // Can be any of the robot states
+    currentTraverseState: typeof RobotGoToStates.INIT |
+                          typeof RobotGoToStates.TRAVERSING |
+                          typeof RobotGoToStates.FIN |
+                          typeof RobotGoToStates.NODEST;
 
     constructor() {
-        this.destinationsForRoborock = [];
         this.prevPoint = null;
         this.currDestination = undefined;
         this.structureManagerRef = getStructureManager();
         this.existingTimer = false;
-        this.withinDesiredAreaCount = 0
+        this.withinDesiredAreaCount = 0;
+        this.hardCoded = true;
+        this.currentTraverseState = RobotGoToStates.NODEST;
+        if (this.hardCoded) {
+            // Circle pattern
+            // this.destinationsForRoborock = [new GoToTargetClientStructure(519, 507),
+            //                                 new GoToTargetClientStructure(507, 503),
+            //                                 new GoToTargetClientStructure(505, 509),
+            //                                 new GoToTargetClientStructure(507, 516)];
+            // Real circle pattern
+            this.destinationsForRoborock = [new GoToTargetClientStructure(521.04, 509.517),
+                                            new GoToTargetClientStructure(516.868, 500.782),
+                                            new GoToTargetClientStructure(510.089, 500),
+                                            new GoToTargetClientStructure(505, 503),
+                                            new GoToTargetClientStructure(503, 507),
+                                            new GoToTargetClientStructure(509, 512),
+                                            new GoToTargetClientStructure(518, 513),
+                                            new GoToTargetClientStructure(521, 510)];
+        }
+        else {
+            this.destinationsForRoborock = [];
+        }
     }
 
     // Run this every 5 seconds and if not go to command is received, that signifies that 
@@ -66,20 +100,25 @@ class MultiPointGoToState {
 
             // If the position is the same, we could be stuck or at the start so code in this scoped
             // handles that case
-            console.log("Stationary at " + getRoborockGlobalPos() + " : TIMESTAMP: " + Date.now())
+            let currPointInPixelSpace = this.structureManagerRef.convertCMCoordinatesToPixelSpace({x: currPoint[0], y: currPoint[1]});
+            console.log("Stationary at " + getRoborockGlobalPos() + 
+                "In non CM space" + currPointInPixelSpace.x + ", " + currPointInPixelSpace.y + ": TIMESTAMP: " + Date.now())
 
             let pointsCM = this.structureManagerRef.convertPixelCoordinatesToCMSpace({x: this.currDestination.x0, y: this.currDestination.x0});
             console.log("Desired "  + pointsCM.x + " " + pointsCM.y)
 
             // Check if we reached destination (We accept anywhere within 100 CM range)
             let magDiff = Math.pow(Math.pow(currPoint[0] - pointsCM.x, 2) + Math.pow(currPoint[1] - pointsCM.y, 2), 0.5)
-            if (this.currDestination != undefined && magDiff < 150) {
+
+            // NOTE the mag diff threshold is to be changed in the event that the roborock never reaches or acknowledges
+            // that is has reached the destination
+            if (this.currDestination != undefined && magDiff < 50) {
 
                 // Update state
                 this.withinDesiredAreaCount++;
 
                 // Needs to stay at end poll for 3 loops
-                if (this.withinDesiredAreaCount >= 5) {
+                if (this.withinDesiredAreaCount >= 3) {
                     this.existingTimer = false;
                     this.prevPoint = null;
                     this.currDestination = undefined;
@@ -118,6 +157,12 @@ class MultiPointGoToState {
     }
 
     updateDestinations(goToTarget : GoToTargetClientStructure) {
+
+        if (this.hardCoded) {
+            console.error("The path is designated as hard coded! Cannot add points, tried to add point" + goToTarget.x0 + ", " + goToTarget.y0)
+            return;
+        }
+
         let destContainsCoord = false;
         for (let i = 0; i < this.destinationsForRoborock.length && !destContainsCoord; i++) {
             var currCoord = this.destinationsForRoborock[i];
@@ -145,18 +190,45 @@ class MultiPointGoToState {
         // Refetch structure manager
         this.structureManagerRef = getStructureManager();
         if (recentGoTo == undefined || 
-            this.structureManagerRef == null || 
-            this.existingTimer) {
-                console.log("terminate")
+            this.structureManagerRef == null) {
+                console.error("Tried to go to multiple with either existing path or unable to fetch required objects")
                 return;
         }
 
         this.currDestination = recentGoTo;
         let CMCoords = this.structureManagerRef.convertPixelCoordinatesToCMSpace({x: recentGoTo.x0, y: recentGoTo.y0})
+        console.log("start")
         sendGoToCommand(CMCoords);
-        this.withinDesiredAreaCount = 0;
+        // Sending the go to command right away leads to issues, delay for 3 seconds
+        setTimeout(() => {
+            sendGoToCommand(CMCoords);
+        }, 3000)
+        // this.withinDesiredAreaCount = 0;
+        this.currentTraverseState = RobotGoToStates.INIT;
+        // this.initiateGoToCommandChecker()
+    }
 
-        this.initiateGoToCommandChecker()
+    updateTraverseFSM(newStatus: 
+        "moving" | "paused" | "error" | "docked" | "idle" | "returning" | "cleaning" | "manual_control" | undefined
+    ) {
+        // Check current state
+        if (this.currentTraverseState === RobotGoToStates.NODEST) {
+            // Don't do anything, wait for a destination
+        }
+        else if (this.currentTraverseState === RobotGoToStates.INIT)  {
+            if (newStatus === "moving") {
+                this.currentTraverseState = RobotGoToStates.TRAVERSING;
+            }
+        }
+        else if (this.currentTraverseState === RobotGoToStates.TRAVERSING) {
+            if (newStatus === "paused") {
+                this.currentTraverseState = RobotGoToStates.NODEST;
+                console.log("finished moving")
+
+                // Will handle if there is any more go to commands or if its empty
+                this.executeConsecGoTo()
+            }
+        }
     }
 }
 
@@ -203,6 +275,9 @@ const GoToActions = (
     });
 
     const canGo = status === "idle" || status === "docked" || status === "paused" || status === "returning" || status === "error";
+
+    // Update go to FSM
+    multiPointGoToRef.updateTraverseFSM(status);
 
     const handleClick = React.useCallback(() => {
         if (!canGo || !goToTarget) {

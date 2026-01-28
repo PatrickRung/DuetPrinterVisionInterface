@@ -223,7 +223,11 @@ abstract class BaseMap<P, S> extends React.Component<P & MapProps, S & MapState 
         //This can be overridden to do something when the map is updated with a new one
 
         // Update roborock global pos
-        roborockGlobalPos = this.props.rawMap.entities[2].points;
+        // Find robot position within the entities array
+        let tempGlobalPos = this.props.rawMap.entities.find(entity => { return entity.type === "robot_position"})?.points
+        if (typeof tempGlobalPos !== "undefined") {
+            roborockGlobalPos = tempGlobalPos;
+        } 
     }
 
     componentWillUnmount(): void {
