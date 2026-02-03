@@ -217,11 +217,12 @@ class MultiPointGoToState {
         }
         else if (this.currentTraverseState === RobotGoToStates.INIT)  {
             if (newStatus === "moving") {
+                console.log("start moving")
                 this.currentTraverseState = RobotGoToStates.TRAVERSING;
             }
         }
         else if (this.currentTraverseState === RobotGoToStates.TRAVERSING) {
-            if (newStatus === "paused") {
+            if (newStatus === "paused" || newStatus === "idle") {
                 this.currentTraverseState = RobotGoToStates.NODEST;
                 console.log("finished moving")
 
