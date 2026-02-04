@@ -66,7 +66,32 @@ class MultiPointGoToState {
             //                                 new GoToTargetClientStructure(505, 509),
             //                                 new GoToTargetClientStructure(507, 516)];
             // Real circle pattern
+            // this.destinationsForRoborock = [new GoToTargetClientStructure(521.04, 509.517),
+            //                                 new GoToTargetClientStructure(516.868, 500.782),
+            //                                 new GoToTargetClientStructure(510.089, 500),
+            //                                 new GoToTargetClientStructure(505, 503),
+            //                                 new GoToTargetClientStructure(503, 507),
+            //                                 new GoToTargetClientStructure(509, 512),
+            //                                 new GoToTargetClientStructure(518, 513),
+            //                                 new GoToTargetClientStructure(521, 510)];
+            // 3 circles:
             this.destinationsForRoborock = [new GoToTargetClientStructure(521.04, 509.517),
+                                            new GoToTargetClientStructure(516.868, 500.782),
+                                            new GoToTargetClientStructure(510.089, 500),
+                                            new GoToTargetClientStructure(505, 503),
+                                            new GoToTargetClientStructure(503, 507),
+                                            new GoToTargetClientStructure(509, 512),
+                                            new GoToTargetClientStructure(518, 513),
+                                            new GoToTargetClientStructure(521, 510),
+                                            new GoToTargetClientStructure(521.04, 509.517),
+                                            new GoToTargetClientStructure(516.868, 500.782),
+                                            new GoToTargetClientStructure(510.089, 500),
+                                            new GoToTargetClientStructure(505, 503),
+                                            new GoToTargetClientStructure(503, 507),
+                                            new GoToTargetClientStructure(509, 512),
+                                            new GoToTargetClientStructure(518, 513),
+                                            new GoToTargetClientStructure(521, 510),
+                                            new GoToTargetClientStructure(521.04, 509.517),
                                             new GoToTargetClientStructure(516.868, 500.782),
                                             new GoToTargetClientStructure(510.089, 500),
                                             new GoToTargetClientStructure(505, 503),
@@ -179,33 +204,110 @@ class MultiPointGoToState {
         }
     }
 
-    executeConsecGoTo() {
-        console.log(this.destinationsForRoborock.length)
-        if (this.destinationsForRoborock.length == 0) {
-            return;
+    async executeConsecGoTo() {
+        console.log("Starting 90 degree rotation");
+        
+        const ROBOT_STATE_URL = '/api/v2/robot/state';
+        
+        // Helper function to extract angle from state JSON
+        const getAngleFromState = (state: any): number => {
+            const robotPosition = state.map?.entities?.find((entity: any) => entity.type === 'robot_position');
+            console.log(robotPosition.metaData.angle)
+            return robotPosition.metaData.angle; // Third element is the angle
+        };
+        
+        try {
+            // Get initial angle
+            const initialStateResponse = await fetch(ROBOT_STATE_URL);
+            const initialState = await initialStateResponse.json();
+            const initialAngle = getAngleFromState(initialState);
+            const targetAngle = (initialAngle + 90) % 360;
+            
+            console.log(`Initial angle: ${initialAngle}, Target angle: ${targetAngle}`);
+            
+            // Import the API client function
+            const { sendHighResolutionManualControlInteraction } = await import("../../../api/client");
+            
+            // Start rotation - enable manual control and start rotating
+            await sendHighResolutionManualControlInteraction({
+                action: "enable"
+            });
+            
+            // Give it a moment to enable
+            await new Promise(resolve => setTimeout(resolve, 300));
+            
+            // Start rotation
+            await sendHighResolutionManualControlInteraction({
+                action: "move",
+                vector: {
+                    velocity: 0,
+                    angle: 10
+                }
+            });
+            
+            let rotationComplete = false;
+            let pollCount = 0;
+            const MAX_POLLS = 100; // Safety limit (50 seconds max at 500ms intervals)
+            
+            // Poll until rotation is complete
+            while (!rotationComplete && pollCount < MAX_POLLS) {
+                await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms between polls
+                
+                const currentStateResponse = await fetch(ROBOT_STATE_URL);
+                const currentState = await currentStateResponse.json();
+                const currentAngle = getAngleFromState(currentState);
+                
+                // Calculate angle difference (accounting for 360 degree wraparound)
+                let angleDiff = Math.abs(targetAngle - currentAngle);
+                if (angleDiff > 180) {
+                    angleDiff = 360 - angleDiff;
+                }
+                
+                console.log(`Current angle: ${currentAngle}, Diff from target: ${angleDiff}`);
+                
+                // Check if we're within 2 degrees of target (tolerance for sensor accuracy)
+                if (angleDiff < 2) {
+                    rotationComplete = true;
+                    console.log("Rotation complete!");
+                    
+                    // Stop rotation
+                    await sendHighResolutionManualControlInteraction({
+                        action: "move",
+                        vector: {
+                            velocity: 0,
+                            angle: 10
+                        }
+                    });
+                    
+                }
+
+                if (!rotationComplete) {
+                    console.error("Rotation timeout - max polls reached");
+                    // Attempt to stop rotation anyway
+                    await sendHighResolutionManualControlInteraction({
+                        action: "move",
+                        vector: {
+                            velocity: 0,
+                            angle: 10
+                        }
+                    });
+                }
+                
+                pollCount++;
+            }
+            
+        } catch (error) {
+            console.error("Error during rotation:", error);
+            // Try to disable manual control in case of error
+            try {
+                const { sendHighResolutionManualControlInteraction } = await import("../../../api/client");
+                await sendHighResolutionManualControlInteraction({
+                    action: "disable"
+                });
+            } catch (cleanupError) {
+                console.error("Error during cleanup:", cleanupError);
+            }
         }
-
-        let recentGoTo = this.destinationsForRoborock.shift() 
-
-        // Refetch structure manager
-        this.structureManagerRef = getStructureManager();
-        if (recentGoTo == undefined || 
-            this.structureManagerRef == null) {
-                console.error("Tried to go to multiple with either existing path or unable to fetch required objects")
-                return;
-        }
-
-        this.currDestination = recentGoTo;
-        let CMCoords = this.structureManagerRef.convertPixelCoordinatesToCMSpace({x: recentGoTo.x0, y: recentGoTo.y0})
-        console.log("start")
-        sendGoToCommand(CMCoords);
-        // Sending the go to command right away leads to issues, delay for 3 seconds
-        setTimeout(() => {
-            sendGoToCommand(CMCoords);
-        }, 3000)
-        // this.withinDesiredAreaCount = 0;
-        this.currentTraverseState = RobotGoToStates.INIT;
-        // this.initiateGoToCommandChecker()
     }
 
     updateTraverseFSM(newStatus: 
