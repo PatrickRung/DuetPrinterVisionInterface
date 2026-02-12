@@ -1,6 +1,7 @@
 # MobiPrint large scale printing codebase
 
-# Below are instructions for the python backend running on the raspberry pi providng computer vision based localization
+# Raspberry PI backend (3D printer and CV base movement controller)
+Below are instructions for the python backend running on the raspberry pi providng computer vision based localization
 
 You will need to set up the virtual environment using the system site package, thus use this command.
 This is important for getting the Python camera to work with the virtual environment.
@@ -47,7 +48,8 @@ If there is an error about incompatible data formatting between simplejpeg and n
 2. python -m pip install --no-cache-dir simplejpeg # Reinstall
 3. python3 -m pip install picamera2 # need to reinstall camera
 
-# Below are details for the client frontend
+# React frontend (Slicer, visual debug tool and first pass controller)
+Below are details for the client frontend
 
 The formal read me for the client front end is located at /DuetPrinterVisionInterface/clientInterface/README.md
 The front end is designed to be a debugging tool as well as provide the first layer print jobs that will print the first set
