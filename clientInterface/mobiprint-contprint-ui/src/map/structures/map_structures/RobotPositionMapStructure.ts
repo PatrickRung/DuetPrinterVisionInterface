@@ -61,6 +61,8 @@ class RobotPositionMapStructure extends MapStructure {
             return canvasimg;
         };
 
+        // Used to compensate for the fact that the roborock print base is larger than the bounding box for the static image
+        // compensates by adding more height and width if base exceeds icon width/ height
         const rotatePrintBox = (source: CanvasImageSource, size: {width: number, height: number}, angle: number) => {
 
             const radians = angle * Math.PI / 180;
@@ -125,6 +127,7 @@ class RobotPositionMapStructure extends MapStructure {
         );
         console.log("Width " + rotatedImg.width)
 
+        // Draws image with scaled offset, adjusting the location to the desired offset
         ctx.drawImage(
             rotatedPrintSpaceImg,
             (p0.x - rotatedImg.width / 2) + (Math.cos((this.angle + 90) * Math.PI / 180) * OFFSET * rotatedImg.width),
