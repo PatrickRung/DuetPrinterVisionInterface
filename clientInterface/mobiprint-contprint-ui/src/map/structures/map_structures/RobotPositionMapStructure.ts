@@ -1,10 +1,20 @@
 import MapStructure from "./MapStructure";
 import robotIconSVG from "../icons/robot.svg";
+import robotPrintBed from "../icons/OutlineSVG.svg";
 import {Canvas2DContextTrackingWrapper} from "../../utils/Canvas2DContextTrackingWrapper";
 import {considerHiDPI} from "../../utils/helpers";
+import { Co2Sharp } from "@mui/icons-material";
 
 const img = new Image();
 img.src = robotIconSVG;
+
+const areaImage = new Image();
+areaImage.src = robotPrintBed;
+
+const WIDTH_CONSTANT = 75
+const LENGTH_CONSTANT = 75
+
+const OFFSET = 1
 
 class RobotPositionMapStructure extends MapStructure {
     public static readonly TYPE = "RobotPositionMapStructure";
@@ -21,6 +31,11 @@ class RobotPositionMapStructure extends MapStructure {
         const scaledSize = {
             width: considerHiDPI(img.width) / (considerHiDPI(4.5) / scaleFactor),
             height: considerHiDPI(img.height) / (considerHiDPI(4.5) / scaleFactor)
+        };
+
+        const printAreaScaledSize = {
+            width: considerHiDPI(areaImage.width) / (considerHiDPI(4.5) / scaleFactor),
+            height: considerHiDPI(areaImage.height) / (considerHiDPI(4.5) / scaleFactor)
         };
 
         if (scaledSize.width < 1 || scaledSize.height < 1) {
@@ -46,12 +61,57 @@ class RobotPositionMapStructure extends MapStructure {
             return canvasimg;
         };
 
+        const rotatePrintBox = (source: CanvasImageSource, size: {width: number, height: number}, angle: number) => {
+
+            const radians = angle * Math.PI / 180;
+
+            const originalWidth = size.width;
+            const originalHeight = size.height;
+
+            // Calculate bounding box size after rotation
+            const cos = Math.abs(Math.cos(radians));
+            const sin = Math.abs(Math.sin(radians));
+
+            const newWidth = Math.ceil(originalWidth * cos + originalHeight * sin);
+            const newHeight = Math.ceil(originalWidth * sin + originalHeight * cos);
+
+            const canvasimg = document.createElement("canvas");
+            canvasimg.width = newWidth;
+            canvasimg.height = newHeight;
+
+            const ctximg = canvasimg.getContext("2d");
+
+                if (ctximg) {
+                    // Move to center of new canvas
+                    ctximg.translate(newWidth / 2, newHeight / 2);
+
+                    // Rotate
+                    ctximg.rotate(radians);
+
+                    // Draw image centered
+                    ctximg.drawImage(
+                        source,
+                        -originalWidth / 2,
+                        -originalHeight / 2,
+                        originalWidth,
+                        originalHeight
+                    );
+                }
+
+            return canvasimg;
+        };
+
         const rotatedImg = rotateRobot(
             this.getOptimizedImage(img, scaledSize.width, scaledSize.height),
             scaledSize,
             this.angle
         );
 
+        const rotatedPrintSpaceImg = rotatePrintBox(
+            areaImage,
+            printAreaScaledSize,
+            this.angle
+        );
 
         const ctx = ctxWrapper.getContext();
         const p0 = new DOMPoint(this.x0, this.y0).matrixTransform(transformationMatrixToScreenSpace);
@@ -60,6 +120,15 @@ class RobotPositionMapStructure extends MapStructure {
             rotatedImg,
             p0.x - rotatedImg.width / 2,
             p0.y - rotatedImg.height / 2,
+            rotatedImg.width,
+            rotatedImg.height
+        );
+        console.log("Width " + rotatedImg.width)
+
+        ctx.drawImage(
+            rotatedPrintSpaceImg,
+            (p0.x - rotatedImg.width / 2) + (Math.cos((this.angle + 90) * Math.PI / 180) * OFFSET * rotatedImg.width),
+            (p0.y - rotatedImg.height / 2) +(Math.sin((this.angle + 90) * Math.PI / 180) * OFFSET * rotatedImg.height),
             rotatedImg.width,
             rotatedImg.height
         );
