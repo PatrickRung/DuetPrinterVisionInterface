@@ -273,17 +273,21 @@ export const sendGoToCommand = async (point: Point): Promise<void> => {
             action: "goto",
             coordinates: floorObject(point),
         }
-    );
+    ).catch(function (error) {return});
 };
 
-export const fetchZoneProperties = async (): Promise<ZoneProperties> => {
+export const fetchZoneProperties = async (): Promise<ZoneProperties | void> => {
     return valetudoAPI
         .get<ZoneProperties>(
-            `/robot/capabilities/${Capability.ZoneCleaning}/properties`
+            `/robot/capabilities/${Capability.ZoneCleaning}/properties`, {
+            validateStatus: function (status) {
+                return status < 500; // Resolve only if the status code is less than 500
+            }}
         )
         .then(({data}) => {
             return data;
-        });
+        })
+        .catch(function (error) {return});
 };
 
 export const sendCleanZonesCommand = async (
