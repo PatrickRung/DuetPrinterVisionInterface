@@ -3,6 +3,8 @@ import robotIconSVG from "../icons/robot.svg";
 import robotPrintBed from "../icons/OutlineSVG.svg";
 import {Canvas2DContextTrackingWrapper} from "../../utils/Canvas2DContextTrackingWrapper";
 import {considerHiDPI} from "../../utils/helpers";
+import { getStructureManager } from "../../BaseMap" // Get strucutre manager from base map in order 
+import StructureManager from "../../StructureManager";
 import { Co2Sharp } from "@mui/icons-material";
 
 const img = new Image();
@@ -11,20 +13,23 @@ img.src = robotIconSVG;
 const areaImage = new Image();
 areaImage.src = robotPrintBed;
 
-const WIDTH_CONSTANT = 75
-const LENGTH_CONSTANT = 75
+const WIDTH_CONSTANT = 40
+const LENGTH_CONSTANT = 40
 
-const OFFSET = 1
+// OFFSET is declared in CM
+const OFFSET = 30
 
 class RobotPositionMapStructure extends MapStructure {
     public static readonly TYPE = "RobotPositionMapStructure";
 
     private readonly angle: number;
+    private structureManagerRef: StructureManager;
 
     constructor(x0 : number ,y0 : number, angle: number) {
         super(x0, y0);
 
         this.angle = angle;
+        this.structureManagerRef = getStructureManager()
     }
 
     draw(ctxWrapper: Canvas2DContextTrackingWrapper, transformationMatrixToScreenSpace: DOMMatrixInit, scaleFactor: number): void {
@@ -125,13 +130,15 @@ class RobotPositionMapStructure extends MapStructure {
             rotatedImg.width,
             rotatedImg.height
         );
-        console.log("Width " + rotatedImg.width)
 
-        // Draws image with scaled offset, adjusting the location to the desired offset
+        // Make offset calculation in the map pixel coordinate space, then use the matrix transform to transpose into screen pixel size
+        const offSetLoc = new DOMPoint(this.x0 + Math.cos((this.angle + 90) * Math.PI / 180) * this.structureManagerRef.convertCMLengthToPixelSpace(OFFSET), 
+            this.y0 + Math.sin((this.angle + 90) * Math.PI / 180) * this.structureManagerRef.convertCMLengthToPixelSpace(OFFSET)).matrixTransform(transformationMatrixToScreenSpace);
+
         ctx.drawImage(
             rotatedPrintSpaceImg,
-            (p0.x - rotatedImg.width / 2) + (Math.cos((this.angle + 90) * Math.PI / 180) * OFFSET * rotatedImg.width),
-            (p0.y - rotatedImg.height / 2) +(Math.sin((this.angle + 90) * Math.PI / 180) * OFFSET * rotatedImg.height),
+            offSetLoc.x - rotatedImg.width / 2,
+            offSetLoc.y - rotatedImg.height / 2,
             rotatedImg.width,
             rotatedImg.height
         );

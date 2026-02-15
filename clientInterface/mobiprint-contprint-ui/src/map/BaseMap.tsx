@@ -22,7 +22,7 @@ import {clampMapScalingFactorFactor, considerHiDPI} from "./utils/helpers";
 
 // Export roborock location in CM
 var roborockGlobalPos: number[] | null
-var structureManagerGlobalRef : StructureManager | null
+var structureManagerGlobalRef : StructureManager
 
 export function getRoborockGlobalPos() : number[] {
     if (roborockGlobalPos == null) {
@@ -31,7 +31,7 @@ export function getRoborockGlobalPos() : number[] {
     return roborockGlobalPos
 }
 
-export function getStructureManager() : StructureManager | null {
+export function getStructureManager() : StructureManager {
     return structureManagerGlobalRef;
 }
 

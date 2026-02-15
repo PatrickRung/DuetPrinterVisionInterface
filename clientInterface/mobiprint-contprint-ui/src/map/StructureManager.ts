@@ -268,7 +268,10 @@ class StructureManager {
 
     convertCMCoordinatesToPixelSpace(coordinates: PointCoordinates) : PointCoordinates {
         return {x: Math.floor(coordinates.x / this.pixelSize), y: Math.floor(coordinates.y / this.pixelSize)};
+    }
 
+    convertCMLengthToPixelSpace(length: number) : number {
+        return Math.floor(length / this.pixelSize);
     }
 
     convertPixelCoordinatesToCMSpace(coordinates: PointCoordinates) : PointCoordinates {

@@ -48,6 +48,7 @@ const modeToIcon: Record<LiveMapMode, React.ReactElement> = {
     "segments": <SegmentModeIcon/>,
     "zones": <ZoneModeIcon/>,
     "goto": <GoToModeIcon/>,
+    "multigoto": <GoToModeIcon/>,
     "none": <NoneModeIcon/>
 };
 
@@ -55,6 +56,7 @@ const modeToLabel: Record<LiveMapMode, string> = {
     "segments": "Segments",
     "zones": "Zones",
     "goto": "Go To",
+    "multigoto": "Multi Go To",
     "none": "None"
 };
 
