@@ -57,7 +57,7 @@ class MultiPointGoToState {
         this.structureManagerRef = getStructureManager();
         this.existingTimer = false;
         this.withinDesiredAreaCount = 0;
-        this.hardCoded = true;
+        this.hardCoded = false;
         this.currentTraverseState = RobotGoToStates.NODEST;
         if (this.hardCoded) {
             // Circle pattern

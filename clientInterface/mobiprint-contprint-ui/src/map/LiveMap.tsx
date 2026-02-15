@@ -135,6 +135,29 @@ class LiveMap extends BaseMap<LiveMapProps, LiveMapState> {
 
                 break;
             }
+
+            case "multigoto": {
+                if (
+                    this.structureManager.getClientStructures().filter(s => {
+                        return s.type !== GoToTargetClientStructure.TYPE;
+                    }).length === 0
+                ) {
+                    this.structureManager.getClientStructures().forEach(s => {
+                        if (s.type === GoToTargetClientStructure.TYPE) {
+                            this.structureManager.removeClientStructure(s);
+                        }
+                    });
+                    this.structureManager.addClientStructure(new GoToTargetClientStructure(tappedPointInMapSpace.x, tappedPointInMapSpace.y));
+
+
+                    this.updateState();
+                    this.draw();
+
+                    return true;
+                }
+
+                break;
+            }
         }
     }
 
@@ -291,7 +314,7 @@ class LiveMap extends BaseMap<LiveMapProps, LiveMapState> {
                     {
                             this.state.mode === "multigoto" &&
 
-                            <GoToActions
+                            <GoToActionsMultiple
                                 goToTarget={this.state.goToTarget}
                                 convertPixelCoordinatesToCMSpace={(coordinates => {
                                     return this.structureManager.convertPixelCoordinatesToCMSpace(coordinates);
