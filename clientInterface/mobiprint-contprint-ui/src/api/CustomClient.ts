@@ -5,15 +5,8 @@ import { Point,
 import { floorObject } from "./utils";
 import { valetudoAPI } from "./client"
 import { WIDTH_CONSTANT, LENGTH_CONSTANT, OFFSET } from "../map/structures/map_structures/RobotPositionMapStructure"
-import { getStructureManager } from "../map/BaseMap"
-
-// Helper function to extract angle from state JSON
-const getAngleFromState = (state: any): number => {
-    const robotPosition = state.map?.entities?.find((entity: any) => entity.type === 'robot_position');
-    console.log(robotPosition.metaData.angle)
-    return robotPosition.metaData.angle; // Third element is the angle
-};
-
+import { getStructureManager, getRoborockGlobalRot } from "../map/BaseMap"
+import { TextSnippet } from "@mui/icons-material";
 
 // Rotates the roborock the parameter angle number of degrees
 // Works by polling the state as it rotates in small increments until
@@ -24,14 +17,22 @@ export async function roborockRotate(angle: number) {
     console.log("Starting 90 degree rotation");
     
     const ROBOT_STATE_URL = '/api/v2/robot/state';
+
+    if (angle > 360 || angle < 0) {
+        console.error("Angle to rotate to must be between !")
+        return
+    }
     
     try {
-        // Get initial angle
-        const initialStateResponse = await fetch(ROBOT_STATE_URL);
-        const initialState = await initialStateResponse.json();
-        const initialAngle = getAngleFromState(initialState);
-        const targetAngle = (initialAngle + angle) % 360;
-        
+
+        // We can trust this angle because most likely roborock will have learned room already due to previous
+        // go to command
+        const initialAngle = getRoborockGlobalRot()
+
+        let targetAngle = angle;
+        let angularVel = 0
+
+        // Which dir roborock rotate
         console.log(`Initial angle: ${initialAngle}, Target angle: ${targetAngle}`);
         
         // Import the API client function
@@ -64,7 +65,7 @@ export async function roborockRotate(angle: number) {
             
             const currentStateResponse = await fetch(ROBOT_STATE_URL);
             const currentState = await currentStateResponse.json();
-            const currentAngle = getAngleFromState(currentState);
+            const currentAngle = getRoborockGlobalRot();
             
             // Calculate angle difference (accounting for 360 degree wraparound)
             let angleDiff = Math.abs(targetAngle - currentAngle);
@@ -98,13 +99,11 @@ export async function roborockRotate(angle: number) {
         
     } catch (error) {
         console.error("Error during rotation:", error);
-        // Try to disable manual control in case of error
-        try {
-            await sendHighResolutionManualControlInteraction({
-                action: "disable"
-            });
-        } catch (cleanupError) {
-            console.error("Error during cleanup:", cleanupError);
-        }
+        // Try again
+        setTimeout(() => {
+            roborockRotate(angle);
+        }, 3000)
+
     }
 }
+

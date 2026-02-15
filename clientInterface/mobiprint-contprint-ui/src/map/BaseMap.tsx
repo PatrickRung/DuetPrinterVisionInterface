@@ -22,6 +22,7 @@ import {clampMapScalingFactorFactor, considerHiDPI} from "./utils/helpers";
 
 // Export roborock location in CM
 var roborockGlobalPos: number[] | null
+var roborockGlobalRot: number
 var structureManagerGlobalRef : StructureManager
 
 export function getRoborockGlobalPos() : number[] {
@@ -29,6 +30,13 @@ export function getRoborockGlobalPos() : number[] {
         return [0, 0];
     }
     return roborockGlobalPos
+}
+
+export function getRoborockGlobalRot() : number {
+    if (roborockGlobalPos == null) {
+        return 0;
+    }
+    return roborockGlobalRot;
 }
 
 export function getStructureManager() : StructureManager {
@@ -224,10 +232,16 @@ abstract class BaseMap<P, S> extends React.Component<P & MapProps, S & MapState 
 
         // Update roborock global pos
         // Find robot position within the entities array
-        let tempGlobalPos = this.props.rawMap.entities.find(entity => { return entity.type === "robot_position"})?.points
+        let tempGlobalPos = this.props.rawMap.entities.find(entity => { return entity.type === "robot_position"})
         if (typeof tempGlobalPos !== "undefined") {
-            roborockGlobalPos = tempGlobalPos;
-        } 
+            roborockGlobalPos = tempGlobalPos.points;
+
+            // Update rotation
+            let tempAngle = tempGlobalPos.metaData.angle
+            if (typeof tempAngle !== "undefined") {
+                roborockGlobalRot = tempAngle
+            }
+        }   
     }
 
     componentWillUnmount(): void {

@@ -18,7 +18,7 @@ import {
 } from "@mui/icons-material";
 import {sendGoToCommand} from "../../../api/client"
 import { roborockRotate } from "../../../api/CustomClient"
-import { getRoborockGlobalPos, getStructureManager } from "../../BaseMap"
+import { getRoborockGlobalPos, getStructureManager, getRoborockGlobalRot } from "../../BaseMap"
 
 interface GoToActionsProperties {
     goToTarget: GoToTargetClientStructure | undefined;
@@ -166,9 +166,14 @@ class MultiPointGoToState {
                 console.log("finished moving")
 
                 // Before moving on we want to rotate to the desired angle
-                if (typeof this.currDestination !== "undefined") {  // It WILL be defined however error is being thrown
-                    roborockRotate(this.currDestination.aoa_)
-                }
+                let currRot = getRoborockGlobalRot()
+
+                // Add slight delay as sending too many commands breaks the backend
+                setTimeout(() => {
+                    if (typeof this.currDestination !== "undefined") {  // It WILL be defined however error is being thrown
+                        roborockRotate(this.currDestination.aoa_);
+                    }
+                }, 500)
 
                 // Will handle if there is any more go to commands or if its empty
                 this.executeConsecGoTo()

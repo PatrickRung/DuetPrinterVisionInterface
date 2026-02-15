@@ -18,7 +18,7 @@ export const WIDTH_CONSTANT = 40
 export const LENGTH_CONSTANT = 20
 
 export const OFFSET = 30           // OFFSET is declared in CM
-export const BED_ANGLE = 180       // Bed is located right behind mobiPrint if 180
+export const BED_ANGLE = 90       // Bed is located 
 
 class RobotPositionMapStructure extends MapStructure {
     public static readonly TYPE = "RobotPositionMapStructure";
