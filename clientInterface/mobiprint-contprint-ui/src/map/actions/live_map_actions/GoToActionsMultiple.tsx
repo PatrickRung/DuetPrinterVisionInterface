@@ -105,76 +105,6 @@ class MultiPointGoToState {
         }
     }
 
-    // Run this every 5 seconds and if not go to command is received, that signifies that 
-    // the go to command has received a response
-    // Loop ends when withinDesiredAreaCount achieves 3 polls
-    goToCommandHeartbeatCheck() {
-        if (this.structureManagerRef == null || this.currDestination == null) {
-            console.log("Structure manager not loaded")
-            return;
-        }
-
-        let currPoint = getRoborockGlobalPos();
-
-        if (this.prevPoint == null) {
-            this.prevPoint = currPoint;
-        }
-        // Check if we stayed in the same spot for more than 1 iteration, then reset go to state
-        else if (checkAproxEquals(currPoint[0], this.prevPoint[0], 0.01) && 
-                checkAproxEquals(currPoint[1], this.prevPoint[1], 0.01)) {
-
-            // If the position is the same, we could be stuck or at the start so code in this scoped
-            // handles that case
-            let currPointInPixelSpace = this.structureManagerRef.convertCMCoordinatesToPixelSpace({x: currPoint[0], y: currPoint[1]});
-            console.log("Stationary at " + getRoborockGlobalPos() + 
-                "In non CM space" + currPointInPixelSpace.x + ", " + currPointInPixelSpace.y + ": TIMESTAMP: " + Date.now())
-
-            let pointsCM = this.structureManagerRef.convertPixelCoordinatesToCMSpace({x: this.currDestination.x0, y: this.currDestination.x0});
-            console.log("Desired "  + pointsCM.x + " " + pointsCM.y)
-
-            // Check if we reached destination (We accept anywhere within 100 CM range)
-            let magDiff = Math.pow(Math.pow(currPoint[0] - pointsCM.x, 2) + Math.pow(currPoint[1] - pointsCM.y, 2), 0.5)
-
-            // NOTE the mag diff threshold is to be changed in the event that the roborock never reaches or acknowledges
-            // that is has reached the destination
-            if (this.currDestination != undefined && magDiff < 50) {
-
-                // Update state
-                this.withinDesiredAreaCount++;
-
-                // Needs to stay at end poll for 3 loops
-                if (this.withinDesiredAreaCount >= 3) {
-                    this.existingTimer = false;
-                    this.prevPoint = null;
-                    this.currDestination = undefined;
-
-                    // Trigger next go to!
-                    console.log("fin execution")
-                    this.executeConsecGoTo()
-                    return;
-                }
-            }
-            else {
-                console.log("Did not make it")
-                this.withinDesiredAreaCount = 0;
-            }
-        }
-
-        // Update prevPoint
-        this.prevPoint = currPoint;
-
-        setTimeout(() => {
-            this.goToCommandHeartbeatCheck()
-        }, 3000)
-    }
-
-    initiateGoToCommandChecker() {
-        if (!this.existingTimer) {
-            this.goToCommandHeartbeatCheck()
-            this.existingTimer = true;
-        }
-    }
-
     clearDestinationState() {
         if (this.destinationsForRoborock != null) {
             this.destinationsForRoborock.length = 0
@@ -212,6 +142,25 @@ class MultiPointGoToState {
 
         // Pop off the target that we are going to right now
         let recentGoTo = this.destinationsForRoborock.shift() 
+
+        // Refetch structure manager
+        this.structureManagerRef = getStructureManager();
+        if (recentGoTo == undefined || 
+            this.structureManagerRef == null) {
+                console.error("Tried to go to multiple with either existing path or unable to fetch required objects")
+                return;
+        }
+
+        this.currDestination = recentGoTo;
+        let CMCoords = this.structureManagerRef.convertPixelCoordinatesToCMSpace({x: recentGoTo.x0, y: recentGoTo.y0})
+        console.log("start")
+        sendGoToCommand(CMCoords);
+        // Sending the go to command right away leads to issues, delay for 3 seconds
+        setTimeout(() => {
+            sendGoToCommand(CMCoords);
+        }, 3000)
+
+        this.currentTraverseState = RobotGoToStates.INIT;
     }
 
     updateTraverseFSM(newStatus: 
