@@ -14,7 +14,7 @@ const areaImage = new Image();
 areaImage.src = robotPrintBed;
 
 const WIDTH_CONSTANT = 40
-const LENGTH_CONSTANT = 40
+const LENGTH_CONSTANT = 20
 
 // OFFSET is declared in CM
 const OFFSET = 30
@@ -70,10 +70,16 @@ class RobotPositionMapStructure extends MapStructure {
         // compensates by adding more height and width if base exceeds icon width/ height
         const rotatePrintBox = (source: CanvasImageSource, size: {width: number, height: number}, angle: number) => {
 
+            // Really janky solution that might not even work as the squish is a little weird
+            const bedsizeScreenSpaceOffset = new DOMPoint(this.structureManagerRef.convertCMLengthToPixelSpace(WIDTH_CONSTANT), 
+                this.structureManagerRef.convertCMLengthToPixelSpace(LENGTH_CONSTANT)).matrixTransform(transformationMatrixToScreenSpace);
+            const zeroCoord = new DOMPoint(0,0).matrixTransform(transformationMatrixToScreenSpace);
+
+            const bedsizeScreenSpace = new DOMPoint(bedsizeScreenSpaceOffset.x - zeroCoord.x, bedsizeScreenSpaceOffset.y - zeroCoord.y);
             const radians = angle * Math.PI / 180;
 
-            const originalWidth = size.width;
-            const originalHeight = size.height;
+            const originalWidth = bedsizeScreenSpace.x;
+            const originalHeight = bedsizeScreenSpace.y;
 
             // Calculate bounding box size after rotation
             const cos = Math.abs(Math.cos(radians));
