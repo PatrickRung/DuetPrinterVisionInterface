@@ -11,11 +11,13 @@ import StructureManager from "../../StructureManager";
 import {useLongPress} from "use-long-press";
 import {floorObject} from "../../../api/utils";
 import {PointCoordinates} from "../../utils/types";
+import { WIDTH_CONSTANT, LENGTH_CONSTANT, OFFSET } from "../../structures/map_structures/RobotPositionMapStructure"
 import {
     Clear as ClearIcon,
     PlayArrow as GoIcon
 } from "@mui/icons-material";
 import {sendGoToCommand} from "../../../api/client"
+import { roborockRotate } from "../../../api/CustomClient"
 import { getRoborockGlobalPos, getStructureManager } from "../../BaseMap"
 
 interface GoToActionsProperties {
@@ -34,15 +36,28 @@ const RobotGoToStates = Object.freeze({
     NODEST: "No destination"
 });
 
+// Abstraction for print loc considering the location and area of attack
+export class printLocation {
+    x_: number
+    y_: number
+    aoa_: number
+    constructor(x: number, y: number, aoa: number) {
+        this.x_ = x;
+        this.y_ = y;
+        this.aoa_ = aoa;
+    }
+}
+
 class MultiPointGoToState {
 
     // Properties
-    destinationsForRoborock : GoToTargetClientStructure[];
-    currDestination : GoToTargetClientStructure | undefined;
+    destinationsForRoborock : printLocation[];
+    currDestination : printLocation | undefined;
     prevPoint: number[] | null;
     structureManagerRef: StructureManager | null;
     existingTimer: boolean;                                 // Denotes whether or not there is a timer active 
                                                             // !! DO NOT CREATED MULTIPLE TIMERS CHECK THIS VAR
+
     withinDesiredAreaCount: number;
     hardCoded: boolean;
     // Can be any of the robot states
@@ -60,45 +75,9 @@ class MultiPointGoToState {
         this.hardCoded = false;
         this.currentTraverseState = RobotGoToStates.NODEST;
         if (this.hardCoded) {
-            // Circle pattern
-            // this.destinationsForRoborock = [new GoToTargetClientStructure(519, 507),
-            //                                 new GoToTargetClientStructure(507, 503),
-            //                                 new GoToTargetClientStructure(505, 509),
-            //                                 new GoToTargetClientStructure(507, 516)];
-            // Real circle pattern
-            // this.destinationsForRoborock = [new GoToTargetClientStructure(521.04, 509.517),
-            //                                 new GoToTargetClientStructure(516.868, 500.782),
-            //                                 new GoToTargetClientStructure(510.089, 500),
-            //                                 new GoToTargetClientStructure(505, 503),
-            //                                 new GoToTargetClientStructure(503, 507),
-            //                                 new GoToTargetClientStructure(509, 512),
-            //                                 new GoToTargetClientStructure(518, 513),
-            //                                 new GoToTargetClientStructure(521, 510)];
-            // 3 circles:
-            this.destinationsForRoborock = [new GoToTargetClientStructure(521.04, 509.517),
-                                            new GoToTargetClientStructure(516.868, 500.782),
-                                            new GoToTargetClientStructure(510.089, 500),
-                                            new GoToTargetClientStructure(505, 503),
-                                            new GoToTargetClientStructure(503, 507),
-                                            new GoToTargetClientStructure(509, 512),
-                                            new GoToTargetClientStructure(518, 513),
-                                            new GoToTargetClientStructure(521, 510),
-                                            new GoToTargetClientStructure(521.04, 509.517),
-                                            new GoToTargetClientStructure(516.868, 500.782),
-                                            new GoToTargetClientStructure(510.089, 500),
-                                            new GoToTargetClientStructure(505, 503),
-                                            new GoToTargetClientStructure(503, 507),
-                                            new GoToTargetClientStructure(509, 512),
-                                            new GoToTargetClientStructure(518, 513),
-                                            new GoToTargetClientStructure(521, 510),
-                                            new GoToTargetClientStructure(521.04, 509.517),
-                                            new GoToTargetClientStructure(516.868, 500.782),
-                                            new GoToTargetClientStructure(510.089, 500),
-                                            new GoToTargetClientStructure(505, 503),
-                                            new GoToTargetClientStructure(503, 507),
-                                            new GoToTargetClientStructure(509, 512),
-                                            new GoToTargetClientStructure(518, 513),
-                                            new GoToTargetClientStructure(521, 510)];
+
+            // Removed since old coordinates were not right type
+            this.destinationsForRoborock = [];
         }
         else {
             this.destinationsForRoborock = [];
@@ -122,15 +101,17 @@ class MultiPointGoToState {
         for (let i = 0; i < this.destinationsForRoborock.length && !destContainsCoord; i++) {
             var currCoord = this.destinationsForRoborock[i];
             if (typeof goToTarget !== "undefined" && 
-                checkAproxEquals(goToTarget.x0, currCoord.x0, 0.01) && 
-                checkAproxEquals(goToTarget.y0, currCoord.y0, 0.01)) {
+                checkAproxEquals(goToTarget.x0, currCoord.x_, 0.01) && 
+                checkAproxEquals(goToTarget.y0, currCoord.y_, 0.01)) {
                     destContainsCoord = true;
             }
         }
 
         if (!destContainsCoord && typeof goToTarget !== "undefined") {
             console.log("Add " + goToTarget.x0 + ", " + goToTarget.y0)
-            this.destinationsForRoborock.push(goToTarget);
+            // Default angle set to 0, for demonstration purposes, the roborock should always look to the right of the screen
+            let tempTarget = new printLocation(goToTarget.x0, goToTarget.y0, 0);
+            this.destinationsForRoborock.push(tempTarget);
         }
     }
 
@@ -152,12 +133,15 @@ class MultiPointGoToState {
         }
 
         this.currDestination = recentGoTo;
-        let CMCoords = this.structureManagerRef.convertPixelCoordinatesToCMSpace({x: recentGoTo.x0, y: recentGoTo.y0})
-        console.log("start")
-        sendGoToCommand(CMCoords);
+        let CMCoords = this.structureManagerRef.convertPixelCoordinatesToCMSpace({x: recentGoTo.x_, y: recentGoTo.y_})
+
+        // We want to figure out relative to the aoa where the destination is
+        let destX = CMCoords.x + (OFFSET * Math.cos(recentGoTo.aoa_))
+        let destY = CMCoords.y + (OFFSET * Math.sin(recentGoTo.aoa_))
+
         // Sending the go to command right away leads to issues, delay for 3 seconds
         setTimeout(() => {
-            sendGoToCommand(CMCoords);
+            sendGoToCommand({x: destX, y: destY});
         }, 3000)
 
         this.currentTraverseState = RobotGoToStates.INIT;
@@ -180,6 +164,11 @@ class MultiPointGoToState {
             if (newStatus === "paused" || newStatus === "idle") {
                 this.currentTraverseState = RobotGoToStates.NODEST;
                 console.log("finished moving")
+
+                // Before moving on we want to rotate to the desired angle
+                if (typeof this.currDestination !== "undefined") {  // It WILL be defined however error is being thrown
+                    roborockRotate(this.currDestination.aoa_)
+                }
 
                 // Will handle if there is any more go to commands or if its empty
                 this.executeConsecGoTo()

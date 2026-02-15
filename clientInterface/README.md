@@ -10,10 +10,11 @@ Duet specific functionality builds heavily off of the codebase mainly providing 
 movement functions. Below is a list of modified or new files that help identify where these modificataions are located
 These files below
 
-GoToActions.tsx
-- GoToActions has been modified to performed multiple consecutive go to locations based on a queue stored within it's
+GoToActionsMultiple.tsx
+- GoToActionsMultiple has been modified to performed multiple consecutive go to locations based on a queue stored within it's
 state, rather than the single point that it was originall programmed to use
 
+### RobotPositionMapStrcuture is one of the most important file as it will also contain the const until I figure out a better place to put it
 RobotPositionMapStrcuture.ts 
 - Modified to display print space relative the Roborocks current orientation
 

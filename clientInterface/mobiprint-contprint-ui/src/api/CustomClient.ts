@@ -1,4 +1,11 @@
 import { sendHighResolutionManualControlInteraction } from "./client";
+import { Point, 
+    Capability
+ } from "./types"
+import { floorObject } from "./utils";
+import { valetudoAPI } from "./client"
+import { WIDTH_CONSTANT, LENGTH_CONSTANT, OFFSET } from "../map/structures/map_structures/RobotPositionMapStructure"
+import { getStructureManager } from "../map/BaseMap"
 
 // Helper function to extract angle from state JSON
 const getAngleFromState = (state: any): number => {
@@ -13,7 +20,7 @@ const getAngleFromState = (state: any): number => {
 // the desired angle is reached
 // TODO the rotation is fairly stuttery, we could just keep on sending commands repeatedly instead of waiting for the next poll
 // to send the rotate command
-async function roborockRotate(angle: number) {
+export async function roborockRotate(angle: number) {
     console.log("Starting 90 degree rotation");
     
     const ROBOT_STATE_URL = '/api/v2/robot/state';

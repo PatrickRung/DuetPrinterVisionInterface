@@ -13,11 +13,12 @@ img.src = robotIconSVG;
 const areaImage = new Image();
 areaImage.src = robotPrintBed;
 
-const WIDTH_CONSTANT = 40
-const LENGTH_CONSTANT = 20
+// These constants are used code wide
+export const WIDTH_CONSTANT = 40
+export const LENGTH_CONSTANT = 20
 
-// OFFSET is declared in CM
-const OFFSET = 30
+export const OFFSET = 30           // OFFSET is declared in CM
+export const BED_ANGLE = 180       // Bed is located right behind mobiPrint if 180
 
 class RobotPositionMapStructure extends MapStructure {
     public static readonly TYPE = "RobotPositionMapStructure";
