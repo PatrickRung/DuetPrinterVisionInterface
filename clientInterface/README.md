@@ -21,3 +21,8 @@ RobotPositionMapStrcuture.ts
 CustomClient.ts
 - Custom functions for Roborock specific movmenet such as:
     - Rotate to designated rotation
+
+
+There are unit test for the frontend math because its much better to not test against the robot when unit test take 4 seconds!
+
+run test via "npm test" where the test code is in the App.test.js under ./src/

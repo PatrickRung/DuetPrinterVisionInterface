@@ -7,6 +7,7 @@ import { valetudoAPI } from "./client"
 import { WIDTH_CONSTANT, LENGTH_CONSTANT, OFFSET } from "../map/structures/map_structures/RobotPositionMapStructure"
 import { getStructureManager, getRoborockGlobalRot } from "../map/BaseMap"
 import { TextSnippet } from "@mui/icons-material";
+import getAngularDir  from "./geomHelper"
 
 // Rotates the roborock the parameter angle number of degrees
 // Works by polling the state as it rotates in small increments until
@@ -29,8 +30,8 @@ export async function roborockRotate(angle: number) {
         // go to command
         const initialAngle = getRoborockGlobalRot()
 
-        let targetAngle = angle;
-        let angularVel = 0
+        let targetAngle = angle;        // Leaving this in case wee want to do more pre processing
+        let angularVel = getAngularDir(initialAngle, targetAngle)
 
         // Which dir roborock rotate
         console.log(`Initial angle: ${initialAngle}, Target angle: ${targetAngle}`);
@@ -45,15 +46,6 @@ export async function roborockRotate(angle: number) {
         
         // Give it a moment to enable
         await new Promise(resolve => setTimeout(resolve, 300));
-        
-        // Start rotation
-        await sendHighResolutionManualControlInteraction({
-            action: "move",
-            vector: {
-                velocity: 0,
-                angle: 10
-            }
-        });
         
         let rotationComplete = false;
         let pollCount = 0;
@@ -76,7 +68,7 @@ export async function roborockRotate(angle: number) {
             console.log(`Current angle: ${currentAngle}, Diff from target: ${angleDiff}`);
             
             // Check if we're within 2 degrees of target (tolerance for sensor accuracy)
-            if (angleDiff < 2) {
+            if (angleDiff < 5) {
                 rotationComplete = true;
                 console.log("Rotation complete!");
                 break;
@@ -89,7 +81,7 @@ export async function roborockRotate(angle: number) {
                     action: "move",
                     vector: {
                         velocity: 0,
-                        angle: 10
+                        angle: 20 * angularVel
                     }
                 });
             }

@@ -137,7 +137,7 @@ class MultiPointGoToState {
 
         // We want to figure out relative to the aoa where the destination is
         let destX = CMCoords.x + (OFFSET * Math.cos(recentGoTo.aoa_))
-        let destY = CMCoords.y + (OFFSET * Math.sin(recentGoTo.aoa_))
+        let destY = CMCoords.y + (OFFSET * Math.sin(recentGoTo.aoa_ ))
 
         // Sending the go to command right away leads to issues, delay for 3 seconds
         setTimeout(() => {
@@ -171,7 +171,7 @@ class MultiPointGoToState {
                 // Add slight delay as sending too many commands breaks the backend
                 setTimeout(() => {
                     if (typeof this.currDestination !== "undefined") {  // It WILL be defined however error is being thrown
-                        roborockRotate(this.currDestination.aoa_);
+                        roborockRotate(this.currDestination.aoa_ + 90);
                     }
                 }, 500)
 
