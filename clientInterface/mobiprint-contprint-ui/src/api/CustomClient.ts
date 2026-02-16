@@ -81,7 +81,7 @@ export async function roborockRotate(angle: number) {
                     action: "move",
                     vector: {
                         velocity: 0,
-                        angle: 20 * angularVel
+                        angle: 10 * angularVel
                     }
                 });
             }

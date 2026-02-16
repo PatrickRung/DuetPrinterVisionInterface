@@ -19,6 +19,7 @@ import {
 import {sendGoToCommand} from "../../../api/client"
 import { roborockRotate } from "../../../api/CustomClient"
 import { getRoborockGlobalPos, getStructureManager, getRoborockGlobalRot } from "../../BaseMap"
+import FileUploader from "../../../components/FileUploader"
 
 interface GoToActionsProperties {
     goToTarget: GoToTargetClientStructure | undefined;

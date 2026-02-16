@@ -4,6 +4,7 @@ import './index.css';
 // import App from './App';
 import reportWebVitals from './reportWebVitals';
 import LiveMapPage from "./map/LiveMapPage.tsx";
+import FileUploader from "./components/FileUploader";
 import { QueryClient , QueryClientProvider } from '@tanstack/react-query';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
@@ -14,6 +15,7 @@ root.render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <LiveMapPage/>
+      <FileUploader/>
     </QueryClientProvider>
   </React.StrictMode>
 );
