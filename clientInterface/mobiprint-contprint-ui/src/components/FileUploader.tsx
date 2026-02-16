@@ -2,6 +2,7 @@
 
 import axios from 'axios';
 import { ChangeEvent, useState } from 'react';
+import {} from "../map/structures/map_structures/RobotPositionMapStructure";
 
 type UploadStatus = 'idle' | 'uploading' | 'success' | 'error';
 
@@ -25,6 +26,18 @@ export default function FileUploader() {
     var parser = new DOMParser();
     let XMLRep = parser.parseFromString(text, "text/xml")
     console.log(XMLRep)
+
+    // Parse path
+    // Requires path that are placed in front to have a ID adjacent and greatrer than (be placed below in the XML)
+    // in order for paths to be placed in order and concatenated
+    let line = XMLRep.getElementsByTagName("path")
+    // Mark as parsed
+    for (let index = 0; index < line.length; index++) {
+      let currLine = line.item(index);
+      
+    }
+
+    setStatus('success')
   }
 
   return (
@@ -55,7 +68,7 @@ export default function FileUploader() {
       )}
 
       {status === 'success' && (
-        <p className="text-sm text-green-600">File uploaded successfully!</p>
+        <p className="text-sm text-green-600">File parsed</p>
       )}
 
       {status === 'error' && (

@@ -14,19 +14,25 @@ import {PointCoordinates} from "../../utils/types";
 import { WIDTH_CONSTANT, LENGTH_CONSTANT, OFFSET } from "../../structures/map_structures/RobotPositionMapStructure"
 import {
     Clear as ClearIcon,
-    PlayArrow as GoIcon
+    PlayArrow as GoIcon,
+    Print,
+    Circle as PrintIcon
 } from "@mui/icons-material";
 import {sendGoToCommand} from "../../../api/client"
 import { roborockRotate } from "../../../api/CustomClient"
-import { getRoborockGlobalPos, getStructureManager, getRoborockGlobalRot } from "../../BaseMap"
-import FileUploader from "../../../components/FileUploader"
+import { getStructureManager, getRoborockGlobalRot } from "../../BaseMap"
+import { PrintObjectStructure } from "../../structures/client_structures/PrintObjectStructure"
 
-interface GoToActionsProperties {
+interface MultoGoToProperties {
     goToTarget: GoToTargetClientStructure | undefined;
 
     convertPixelCoordinatesToCMSpace(coordinates: PointCoordinates) : PointCoordinates
 
     onClear(): void;
+
+    onClearPrint(): void;
+
+    onAdd(): void;
 }
 
 // Path traverse state machine
@@ -185,6 +191,12 @@ class MultiPointGoToState {
 
 var multiPointGoToRef = new MultiPointGoToState() 
 
+var printObStrucutreRef: PrintObjectStructure | null;       // Declare as global var for now
+
+function addPrintSpaceToScreen() {
+    printObStrucutreRef = new PrintObjectStructure(0, 0, 200, 200);
+}
+
 function checkAproxEquals(val1: number, val2: number, thresh: number) {
     var diff = Math.abs(val1 - val2);
     return diff < thresh;
@@ -196,11 +208,10 @@ export function clearDestinations() {
 
 
 const GoToActions = (
-    props: GoToActionsProperties
+    props: MultoGoToProperties
 ): React.ReactElement => {
     // Create list for target points:
-
-    const {goToTarget, convertPixelCoordinatesToCMSpace, onClear} = props;
+    const {goToTarget, convertPixelCoordinatesToCMSpace, onClear, onAdd, onClearPrint} = props;
     const [integrationHelpDialogOpen, setIntegrationHelpDialogOpen] = React.useState(false);
     const [integrationHelpDialogPayload, setIntegrationHelpDialogPayload] = React.useState("");
 
@@ -288,7 +299,6 @@ const GoToActions = (
                 </Grid2>
                 <Grid2>
                     {
-                        goToTarget &&
                         <ActionButton
                             color="inherit"
                             size="medium"
@@ -297,6 +307,32 @@ const GoToActions = (
                         >
                             <ClearIcon style={{marginRight: "0.25rem", marginLeft: "-0.25rem"}}/>
                             Clear
+                        </ActionButton>
+                    }
+                </Grid2>
+                <Grid2>
+                    {
+                        <ActionButton
+                            color="inherit"
+                            size="medium"
+                            variant="extended"
+                            onClick={onAdd}
+                        >
+                            <PrintIcon style={{marginRight: "0.25rem", marginLeft: "-0.25rem"}}/>
+                            Add print
+                        </ActionButton>
+                    }
+                </Grid2>
+                <Grid2>
+                    {
+                        <ActionButton
+                            color="inherit"
+                            size="medium"
+                            variant="extended"
+                            onClick={onClearPrint}
+                        >
+                            <PrintIcon style={{marginRight: "0.25rem", marginLeft: "-0.25rem"}}/>
+                            Clear Print Area
                         </ActionButton>
                     }
                 </Grid2>

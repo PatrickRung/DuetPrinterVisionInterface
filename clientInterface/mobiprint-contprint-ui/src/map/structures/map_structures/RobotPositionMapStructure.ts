@@ -1,6 +1,6 @@
 import MapStructure from "./MapStructure";
 import robotIconSVG from "../icons/robot.svg";
-import robotPrintBed from "../icons/OutlineSVG.svg";
+import robotPrintBed from "../icons/print-bed.svg";
 import {Canvas2DContextTrackingWrapper} from "../../utils/Canvas2DContextTrackingWrapper";
 import {considerHiDPI} from "../../utils/helpers";
 import { getStructureManager } from "../../BaseMap" // Get strucutre manager from base map in order 

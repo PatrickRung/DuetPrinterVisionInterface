@@ -5,6 +5,7 @@ import SegmentActions from "./actions/live_map_actions/SegmentActions";
 import SegmentLabelMapStructure from "./structures/map_structures/SegmentLabelMapStructure";
 import ZoneActions from "./actions/live_map_actions/ZoneActions";
 import ZoneClientStructure from "./structures/client_structures/ZoneClientStructure";
+import {PrintObjectStructure} from "./structures/client_structures/PrintObjectStructure";
 import GoToActions from "./actions/live_map_actions/GoToActions";
 import GoToActionsMultiple from "./actions/live_map_actions/GoToActionsMultiple";                   // GoToActions modifcation 
 import {clearDestinations} from "./actions/live_map_actions/GoToActionsMultiple";                   // Clears GoToActions destinations state
@@ -326,6 +327,39 @@ class LiveMap extends BaseMap<LiveMapProps, LiveMapState> {
                                         }
                                         clearDestinations()
                                     });
+                                    this.updateState();
+
+                                    this.draw();
+                                }}
+                                onAdd={() => {
+                                    const currentCenter = this.getCurrentViewportCenterCoordinatesInPixelSpace();
+
+                                    const p0 = {
+                                        x: currentCenter.x -15,
+                                        y: currentCenter.y -15
+                                    };
+                                    const p1 = {
+                                        x: currentCenter.x +15,
+                                        y: currentCenter.y +15
+                                    };
+
+                                    this.structureManager.addClientStructure(new PrintObjectStructure(
+                                        p0.x, p0.y,
+                                        p1.x, p1.y,
+                                        true
+                                    ));
+
+                                    this.updateState();
+
+                                    this.draw();
+                                }}
+                                onClearPrint={() => {
+                                    this.structureManager.getClientStructures().forEach(s => {
+                                        if (s.type === ZoneClientStructure.TYPE) {
+                                            this.structureManager.removeClientStructure(s);
+                                        }
+                                    });
+
                                     this.updateState();
 
                                     this.draw();
