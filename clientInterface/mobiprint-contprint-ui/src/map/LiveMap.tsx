@@ -10,6 +10,7 @@ import GoToActions from "./actions/live_map_actions/GoToActions";
 import GoToActionsMultiple from "./actions/live_map_actions/GoToActionsMultiple";                   // GoToActions modifcation 
 import {clearDestinations} from "./actions/live_map_actions/GoToActionsMultiple";                   // Clears GoToActions destinations state
 import {TapTouchHandlerEvent} from "./utils/touch_handling/events/TapTouchHandlerEvent";
+import {getCurrentFile} from "../components/FileUploader";
 import React from "react";
 import {LiveMapModeSwitcher} from "./LiveMapModeSwitcher";
 import {Button, Dialog, DialogActions, DialogContent, DialogTitle} from "@mui/material";
@@ -346,6 +347,7 @@ class LiveMap extends BaseMap<LiveMapProps, LiveMapState> {
                                     this.structureManager.addClientStructure(new PrintObjectStructure(
                                         p0.x, p0.y,
                                         p1.x, p1.y,
+                                        getCurrentFile(),
                                         true
                                     ));
 

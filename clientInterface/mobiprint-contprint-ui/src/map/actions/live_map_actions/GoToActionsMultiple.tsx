@@ -22,6 +22,7 @@ import {sendGoToCommand} from "../../../api/client"
 import { roborockRotate } from "../../../api/CustomClient"
 import { getStructureManager, getRoborockGlobalRot } from "../../BaseMap"
 import { PrintObjectStructure } from "../../structures/client_structures/PrintObjectStructure"
+import { slice } from "../../../components/FileUploader"
 
 interface MultoGoToProperties {
     goToTarget: GoToTargetClientStructure | undefined;
@@ -191,12 +192,6 @@ class MultiPointGoToState {
 
 var multiPointGoToRef = new MultiPointGoToState() 
 
-var printObStrucutreRef: PrintObjectStructure | null;       // Declare as global var for now
-
-function addPrintSpaceToScreen() {
-    printObStrucutreRef = new PrintObjectStructure(0, 0, 200, 200);
-}
-
 function checkAproxEquals(val1: number, val2: number, thresh: number) {
     var diff = Math.abs(val1 - val2);
     return diff < thresh;
@@ -333,6 +328,19 @@ const GoToActions = (
                         >
                             <PrintIcon style={{marginRight: "0.25rem", marginLeft: "-0.25rem"}}/>
                             Clear Print Area
+                        </ActionButton>
+                    }
+                </Grid2>
+               <Grid2>
+                    {
+                        <ActionButton
+                            color="inherit"
+                            size="medium"
+                            variant="extended"
+                            onClick={ slice }
+                        >
+                            <PrintIcon style={{marginRight: "0.25rem", marginLeft: "-0.25rem"}}/>
+                            Slice
                         </ActionButton>
                     }
                 </Grid2>

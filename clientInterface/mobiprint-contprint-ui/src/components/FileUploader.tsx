@@ -6,6 +6,34 @@ import {} from "../map/structures/map_structures/RobotPositionMapStructure";
 
 type UploadStatus = 'idle' | 'uploading' | 'success' | 'error';
 
+var fileData: File;
+
+export function getCurrentFile() : File {
+  return fileData
+}
+
+export async function slice() {
+    console.log("try")
+    if (fileData !== null) {
+        let text = await fileData.text()
+
+        var parser = new DOMParser();
+        let XMLRep = parser.parseFromString(text, "text/xml")
+
+        // Parse path
+        // Requires path that are placed in front to have a ID adjacent and greatrer than (be placed below in the XML)
+        // in order for paths to be placed in order and concatenated
+        let line = XMLRep.getElementsByTagName("path")
+        // Mark as parsed
+        for (let index = 0; index < line.length; index++) {
+            let currLine = line.item(index);
+            let attrib = currLine?.getAttribute("d")
+            console.log(attrib);
+        }
+    }
+
+}
+
 export default function FileUploader() {
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<UploadStatus>('idle');
@@ -21,21 +49,7 @@ export default function FileUploader() {
   async function handleFileUpload() {
     if (!file) return;
 
-    let text = await file.text()
-
-    var parser = new DOMParser();
-    let XMLRep = parser.parseFromString(text, "text/xml")
-    console.log(XMLRep)
-
-    // Parse path
-    // Requires path that are placed in front to have a ID adjacent and greatrer than (be placed below in the XML)
-    // in order for paths to be placed in order and concatenated
-    let line = XMLRep.getElementsByTagName("path")
-    // Mark as parsed
-    for (let index = 0; index < line.length; index++) {
-      let currLine = line.item(index);
-      
-    }
+    fileData = file
 
     setStatus('success')
   }
