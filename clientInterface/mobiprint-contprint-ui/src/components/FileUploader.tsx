@@ -12,8 +12,49 @@ export function getCurrentFile() : File {
   return fileData
 }
 
+function getPoints(coordinatesAttrib: string) : Array<{x: number, y: number}> {
+  let indexOfC = -1
+  let points = new Array<{x: number, y: number}> ;
+  for (let i = 0; i < coordinatesAttrib.length; i++) {
+    if (coordinatesAttrib.at(i) === 'C') {
+      indexOfC = i;
+      break;
+    }
+  }
+
+  if (indexOfC == -1) {
+    throw new Error("Invalid SVG path (does not contain C denoted points)")
+  }
+
+  const coordsAmalgamatedString = coordinatesAttrib.substring(indexOfC + 1, coordinatesAttrib.length);
+  const coordsSplit = coordsAmalgamatedString.split(", ")
+
+  for (let i = 0; i < coordsSplit.length; i++) {
+    let splitXY = coordsSplit.at(i)?.split(" ")
+    if (typeof splitXY !== undefined) {
+      let XCoord = splitXY?.at(0)
+      let YCoord = splitXY?.at(1)
+      console.log(XCoord)
+      console.log(YCoord)
+
+      if (XCoord !== undefined && YCoord != undefined) {
+        console.log("make")
+        points.push({x: parseInt(XCoord), y: parseInt(YCoord)})
+      }
+    }
+  }
+
+  console.log(points)
+
+  return points;
+}
+
 export async function slice() {
     console.log("try")
+
+    // State for the slicing process
+    const points: Array<{x: number, y: number}> = [];
+
     if (fileData !== null) {
         let text = await fileData.text()
 
@@ -28,7 +69,11 @@ export async function slice() {
         for (let index = 0; index < line.length; index++) {
             let currLine = line.item(index);
             let attrib = currLine?.getAttribute("d")
-            console.log(attrib);
+            if (attrib != null) {
+              let res = getPoints(attrib);
+            }
+
+
         }
     }
 
