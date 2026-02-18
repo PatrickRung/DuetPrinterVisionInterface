@@ -2,7 +2,10 @@
 
 import axios from 'axios';
 import { ChangeEvent, useState } from 'react';
-import {} from "../map/structures/map_structures/RobotPositionMapStructure";
+import { WIDTH_CONSTANT } from "../map/structures/map_structures/RobotPositionMapStructure";  // When we slice we want to know how many segments
+import { X } from '@mui/icons-material';
+                                                                                              // to chunk up to relative to the print size thus
+                                                                                              // we need this
 
 type UploadStatus = 'idle' | 'uploading' | 'success' | 'error';
 
@@ -10,6 +13,10 @@ var fileData: File;
 
 export function getCurrentFile() : File {
   return fileData
+}
+
+function getDistance(p1: {x: number, y: number}, p2: {x: number, y: number}): number {
+  return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2))
 }
 
 function getPoints(coordinatesAttrib: string) : Array<{x: number, y: number}> {
@@ -43,9 +50,6 @@ function getPoints(coordinatesAttrib: string) : Array<{x: number, y: number}> {
       }
     }
   }
-
-  console.log(points)
-
   return points;
 }
 
@@ -53,7 +57,7 @@ export async function slice() {
     console.log("try")
 
     // State for the slicing process
-    const points: Array<{x: number, y: number}> = [];
+    let points: Array<{x: number, y: number}> = [];
 
     if (fileData !== null) {
         let text = await fileData.text()
@@ -71,10 +75,32 @@ export async function slice() {
             let attrib = currLine?.getAttribute("d")
             if (attrib != null) {
               let res = getPoints(attrib);
+              points = points.concat(res);
             }
-
-
         }
+        console.log(points)
+    }
+
+    // Generate path from points and generate destinations based on bed size
+    if (points.length > 0) {
+      let finishedPath = false;
+
+      // Last index of spot not covered by print area
+      let currsCoveredSpot = 0
+
+      while (!finishedPath) {
+
+        let printSpaceRemaining = WIDTH_CONSTANT;
+
+        while (printSpaceRemaining > 0) {
+
+          let currPoint = points[currsCoveredSpot]
+          let nextPoint = points[currsCoveredSpot + 1]
+
+          // let distToNext = getDistance()
+          // if ()
+        }
+      }
     }
 
 }
