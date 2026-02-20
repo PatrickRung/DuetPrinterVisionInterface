@@ -1,5 +1,6 @@
 // File modified from format seen in https://github.com/cosdensolutions/code/tree/master/videos/long/react-upload-files-tutorial
-
+// NOTE FOR THIS FILE
+// at some point PLEASE PLEASE PLEASE move the math to another folder, this file is way to large and complicated
 import axios from 'axios';
 import { ChangeEvent, useState } from 'react';
 import { WIDTH_CONSTANT } from "../map/structures/map_structures/RobotPositionMapStructure";  // When we slice we want to know how many segments
