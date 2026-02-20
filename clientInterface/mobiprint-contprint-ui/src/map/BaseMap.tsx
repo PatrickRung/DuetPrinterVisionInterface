@@ -24,6 +24,7 @@ import {clampMapScalingFactorFactor, considerHiDPI} from "./utils/helpers";
 var roborockGlobalPos: number[] | null
 var roborockGlobalRot: number
 var structureManagerGlobalRef : StructureManager
+var ctxWrapperRef : Canvas2DContextTrackingWrapper
 
 export function getRoborockGlobalPos() : number[] {
     if (roborockGlobalPos == null) {
@@ -42,6 +43,11 @@ export function getRoborockGlobalRot() : number {
 export function getStructureManager() : StructureManager {
     return structureManagerGlobalRef;
 }
+
+export function getCtxWrapper() : Canvas2DContextTrackingWrapper {
+    return ctxWrapperRef;
+}
+
 
 export interface MapProps {
     rawMap: RawMapData;
@@ -156,6 +162,7 @@ abstract class BaseMap<P, S> extends React.Component<P & MapProps, S & MapState 
         this.canvas.width = considerHiDPI(this.canvas.clientWidth);
 
         this.ctxWrapper = new Canvas2DContextTrackingWrapper(this.canvas.getContext("2d")!);
+        ctxWrapperRef = this.ctxWrapper;
 
         this.registerCanvasInteractionHandlers();
         window.addEventListener("resize", this.resizeListener);
