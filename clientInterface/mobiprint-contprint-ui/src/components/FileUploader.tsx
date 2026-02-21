@@ -11,165 +11,18 @@ import { getStructureManager, getCtxWrapper } from "../map/BaseMap"
 import LocationMarkersStucture from "../map/structures/client_structures/LocationMarkersStucture"
 import { PrintObjectStructure } from "../map/structures/client_structures/PrintObjectStructure"
 import { getRobotAngleFromVector } from "../api/geomHelper"
+import { getPointsAlongCurve } from "./componentHelpers/lineParser"
 
 type UploadStatus = 'idle' | 'uploading' | 'success' | 'error';
 
 var fileData: File;
 var SVGWidth: number
 var SVGHeight: number
-const ITERATOR_HARDCAP_CONSTANT = 100
 
 var structureManagerRef = getStructureManager()
 
 export function getCurrentFile() : File {
   return fileData
-}
-
-function getDistance(p1: DOMPoint, p2: DOMPoint): number {
-  if (typeof p1 === "undefined") {
-    throw Error("p1 coordinate undefined")
-  }
-  if (typeof p2 === "undefined") {
-    throw Error("p2 coordinate undefined")
-  }
-  return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2))
-}
-
-function getPointsAlongCurve(curvePoints: Array<DOMPoint>, length: number): Array<DOMPoint> | undefined {
-
-  // Fetch data required for SVG to map display
-  structureManagerRef = getStructureManager()
-  if (typeof structureManagerRef === "undefined") {
-    console.error("No structure manager initialized");
-    return;
-  }
-
-  // Declare all state info regarding slicing
-  let curvePointCurrIndex = 0
-  let currPoint : DOMPoint
-  let segments : Array<DOMPoint>  = [];
-  let ctxWrapperRef = getCtxWrapper()
-  let lengthInPixelSpace = structureManagerRef.convertCMLengthToPixelSpace(length);
-
-  // Note about the code beow it uses type predicates where the param is still structure, but the follow "is" statement
-  // enforces the type input of the function and thus the return type
-  let boundingBoxRef = structureManagerRef.getClientStructures().find(
-    (structure): structure is PrintObjectStructure => { return structure instanceof PrintObjectStructure });
-
-  if (boundingBoxRef === undefined) {
-    throw Error("No Bounding box found on UI, was the SVG uploaded and placed on the map?")
-  }
-
-  let inMapBoundingBoxDim = {x: Math.abs(boundingBoxRef.x0 - boundingBoxRef.x1), y: Math.abs(boundingBoxRef.y0 - boundingBoxRef.y1)}
-
-  let topLeftCoord = new DOMPoint(boundingBoxRef.x0, boundingBoxRef.y0)
-
-  // Convert all points to be in the same coordinate space
-  for (let i = 0; i < curvePoints.length; i++) {
-
-    // iteration points are essentialy the percent of the bounding box covers
-    let iterationPoint = curvePoints.at(i);
-    
-    if (typeof iterationPoint !== "undefined") {
-      let coordInMapPixelSpace = {x: (iterationPoint.x / SVGWidth) * inMapBoundingBoxDim.x,
-        y: (iterationPoint.y / SVGHeight) * inMapBoundingBoxDim.y}
-      curvePoints[i] = new DOMPoint(topLeftCoord.x + coordInMapPixelSpace.x, topLeftCoord.y + coordInMapPixelSpace.y);
-    }
-  }
-
-  let tempPoint = curvePoints.at(0)
-
-  if (typeof tempPoint === "undefined") {
-    throw Error("Invliad points")
-  }
-
-  currPoint = tempPoint;
-  segments.push(currPoint)
-
-  // Enforce hard cap to how many iterations can happen to avoid runnaway looping
-  let hardCapIterator = 0
-  
-  while (curvePointCurrIndex < curvePoints.length) {
-    hardCapIterator++
-    if (hardCapIterator >= ITERATOR_HARDCAP_CONSTANT) {
-      throw Error("Passed iterator hardcap, this print might just be very large (increasee hard cap) or this loop went on for longer than " 
-        + ITERATOR_HARDCAP_CONSTANT)
-      return;
-    }
-
-    let p2 = curvePoints.at(curvePointCurrIndex + 1)
-
-    if (typeof currPoint === "undefined") {
-      console.error("P1 undefined, bad list?")
-      break;
-    }
-    if (typeof p2 === "undefined") {
-      console.error("P2 undefined, bad list?")
-      break;
-    }
-
-    // Draw the current point
-    let currDistance = getDistance(currPoint, p2)
-
-    // Handle cases
-    console.log("out " + (currDistance - lengthInPixelSpace));
-    console.log("curr " + currPoint);
-    console.log("p2 " + p2);
-
-    // If print segment shorter than current line
-    if (currDistance - lengthInPixelSpace > 0) {
-      // Get unit vector and multiply (divde delta by mag)
-      let unitVec = {x: (p2.x - currPoint.x) / currDistance, y: (p2.y - currPoint.y) / currDistance}
-
-      // Rescale to be desired length and apply offset
-      currPoint = new DOMPoint(currPoint.x + (unitVec.x * lengthInPixelSpace), 
-        currPoint.y + (unitVec.y * lengthInPixelSpace));  
-    }
-    else {
-      let lengthRemaining = lengthInPixelSpace;
-
-      let totalPassed = 0;
-
-      console.log("come here")
-      console.log(p2)
-      console.log(currPoint)
-
-      // In this case iterate through points until entire print space is covered
-      while (lengthRemaining > 0) {
-
-        // Reached end of line just return
-        if (typeof p2 === "undefined") {
-          return segments;
-        }
-
-        // Recaulcate currDistance
-        currDistance = getDistance(currPoint, p2)
-
-        lengthRemaining -= currDistance;
-
-        if (lengthRemaining < 0) {
-          // Get unit vector and multiply (divde delta by mag)
-          let unitVec = {x: (p2.x - currPoint.x) / currDistance, y: (p2.y - currPoint.y) / currDistance}
-
-          // Rescale to be desired length
-          currPoint = new DOMPoint(currPoint.x + (unitVec.x * (lengthInPixelSpace - totalPassed)), 
-            currPoint.y + (unitVec.y * (lengthInPixelSpace - totalPassed)));          
-        }
-        else {
-          curvePointCurrIndex++;
-
-          // Update point objects
-          currPoint = curvePoints[curvePointCurrIndex]
-          p2 = curvePoints[curvePointCurrIndex + 1]
-          totalPassed += currDistance;
-        }
-      }
-      
-    }
-    segments.push(currPoint);
-  }
-  console.log("finished slicing")
-  return segments;
 }
 
 function getPoints(coordinatesAttrib: string) : Array<DOMPoint> {
@@ -207,6 +60,9 @@ function getPoints(coordinatesAttrib: string) : Array<DOMPoint> {
 }
 
 export async function slice() {
+
+    // Verify structure manager exists
+    structureManagerRef = getStructureManager();
     console.log("try")
 
     // State for the slicing process
@@ -254,7 +110,7 @@ export async function slice() {
       // Last index of spot not covered by print area
       let currsCoveredSpot = 0
 
-      let segmentsEdge: Array<DOMPoint> | undefined = getPointsAlongCurve(points, WIDTH_CONSTANT);
+      let segmentsEdge: Array<DOMPoint> | undefined = getPointsAlongCurve(points, WIDTH_CONSTANT, SVGWidth, SVGHeight);
 
       if (typeof segmentsEdge === "undefined") {
         console.error("segmented edges returned incorrectly")
@@ -262,6 +118,7 @@ export async function slice() {
       }
 
       console.log("out " + segmentsEdge.length)
+      console.log(segmentsEdge)
 
       let offsetInPixelSpace = getStructureManager().convertCMLengthToPixelSpace(OFFSET)
 
