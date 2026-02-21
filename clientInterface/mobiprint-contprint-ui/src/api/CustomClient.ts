@@ -7,7 +7,7 @@ import { valetudoAPI } from "./client"
 import { WIDTH_CONSTANT, LENGTH_CONSTANT, OFFSET } from "../map/structures/map_structures/RobotPositionMapStructure"
 import { getStructureManager, getRoborockGlobalRot } from "../map/BaseMap"
 import { TextSnippet } from "@mui/icons-material";
-import getAngularDir  from "./geomHelper"
+import { getAngularDir }  from "./geomHelper"
 
 // Rotates the roborock the parameter angle number of degrees
 // Works by polling the state as it rotates in small increments until

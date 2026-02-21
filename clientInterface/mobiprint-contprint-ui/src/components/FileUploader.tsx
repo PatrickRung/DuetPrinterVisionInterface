@@ -3,16 +3,14 @@
 // at some point PLEASE PLEASE PLEASE move the math to another folder, this file is way to large and complicated
 import axios from 'axios';
 import { ChangeEvent, useState } from 'react';
-import { WIDTH_CONSTANT } from "../map/structures/map_structures/RobotPositionMapStructure";  // When we slice we want to know how many segments
+import { WIDTH_CONSTANT, OFFSET } from "../map/structures/map_structures/RobotPositionMapStructure";  // When we slice we want to know how many segments
 import { NoPhotography, StayCurrentPortraitOutlined, X } from '@mui/icons-material';
                                                                                               // to chunk up to relative to the print size thus
                                                                                               // we need this
 import { getStructureManager, getCtxWrapper } from "../map/BaseMap"
 import LocationMarkersStucture from "../map/structures/client_structures/LocationMarkersStucture"
 import { PrintObjectStructure } from "../map/structures/client_structures/PrintObjectStructure"
-import { BoundFunction } from '@testing-library/dom';
-import { renderToPipeableStream } from 'react-dom/server';
-import Structure from '../map/structures/Structure';
+import { getRobotAngleFromVector } from "../api/geomHelper"
 
 type UploadStatus = 'idle' | 'uploading' | 'success' | 'error';
 
@@ -86,8 +84,7 @@ function getPointsAlongCurve(curvePoints: Array<DOMPoint>, length: number): Arra
   }
 
   currPoint = tempPoint;
-  structureManagerRef.addClientStructure(new LocationMarkersStucture(currPoint.x,
-                                                                      currPoint.y))
+  segments.push(currPoint)
 
   // Enforce hard cap to how many iterations can happen to avoid runnaway looping
   let hardCapIterator = 0
@@ -142,7 +139,6 @@ function getPointsAlongCurve(curvePoints: Array<DOMPoint>, length: number): Arra
 
         // Reached end of line just return
         if (typeof p2 === "undefined") {
-          structureManagerRef.addClientStructure(new LocationMarkersStucture(currPoint.x, currPoint.y))
           return segments;
         }
 
@@ -170,8 +166,7 @@ function getPointsAlongCurve(curvePoints: Array<DOMPoint>, length: number): Arra
       }
       
     }
-    structureManagerRef.addClientStructure(new LocationMarkersStucture(currPoint.x, currPoint.y))
-    segments.push();
+    segments.push(currPoint);
   }
   console.log("finished slicing")
   return segments;
@@ -263,9 +258,35 @@ export async function slice() {
 
       if (typeof segmentsEdge === "undefined") {
         console.error("segmented edges returned incorrectly")
+        return;
       }
 
+      console.log("out " + segmentsEdge.length)
 
+      let offsetInPixelSpace = getStructureManager().convertCMLengthToPixelSpace(OFFSET)
+
+      // Iterate through points (considers two adjacent points and formulates position perpendicular to both)
+      for (let pointIndex = 0; pointIndex < segmentsEdge.length - 1; pointIndex++) {
+        console.log("here")
+
+        // Get vector between points
+        let p1 = segmentsEdge[pointIndex];
+        let p2 = segmentsEdge[pointIndex + 1];
+
+        let vec = new DOMPoint(p2.x - p1.x, p2.y - p1.y);
+        let halfWayPoint = new DOMPoint(p1.x + (vec.x / 2), p1.y + (vec.y / 2));
+        let perpVec = new DOMPoint(vec.y, -vec.x);
+
+        // Get unit vec of perpendicular vector
+        let perpVecMag = Math.sqrt(Math.pow(perpVec.x, 2) + Math.pow(perpVec.y, 2));
+        perpVec = new DOMPoint(perpVec.x / perpVecMag, perpVec.y / perpVecMag);
+
+        let robotAoa = getRobotAngleFromVector(perpVec)
+        
+        structureManagerRef.addClientStructure(
+          new LocationMarkersStucture(halfWayPoint.x + (perpVec.x * offsetInPixelSpace), 
+          halfWayPoint.y + (perpVec.y * offsetInPixelSpace), robotAoa, offsetInPixelSpace))
+      }
     }
 
 }

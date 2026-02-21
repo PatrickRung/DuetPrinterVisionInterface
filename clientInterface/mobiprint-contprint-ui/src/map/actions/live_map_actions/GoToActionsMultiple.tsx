@@ -118,7 +118,7 @@ class MultiPointGoToState {
         if (!destContainsCoord && typeof goToTarget !== "undefined") {
             console.log("Add " + goToTarget.x0 + ", " + goToTarget.y0)
             // Default angle set to 0, for demonstration purposes, the roborock should always look to the right of the screen
-            let tempTarget = new printLocation(goToTarget.x0, goToTarget.y0, 0);
+            let tempTarget = new printLocation(goToTarget.x0, goToTarget.y0, 90);
             this.destinationsForRoborock.push(tempTarget);
         }
     }
@@ -144,8 +144,9 @@ class MultiPointGoToState {
         let CMCoords = this.structureManagerRef.convertPixelCoordinatesToCMSpace({x: recentGoTo.x_, y: recentGoTo.y_})
 
         // We want to figure out relative to the aoa where the destination is
-        let destX = CMCoords.x + (OFFSET * Math.cos(recentGoTo.aoa_))
-        let destY = CMCoords.y + (OFFSET * Math.sin(recentGoTo.aoa_ ))
+        let aoaRad = recentGoTo.aoa_ * (Math.PI / 180)
+        let destX = CMCoords.x + (OFFSET * Math.cos(aoaRad))
+        let destY = CMCoords.y + (OFFSET * Math.sin(aoaRad))
 
         // Sending the go to command right away leads to issues, delay for 3 seconds
         setTimeout(() => {
