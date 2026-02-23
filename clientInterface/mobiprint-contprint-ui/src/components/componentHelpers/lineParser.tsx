@@ -1,6 +1,7 @@
 
 import { getStructureManager, getCtxWrapper } from "../../map/BaseMap"
 import { PrintObjectStructure } from "../../map/structures/client_structures/PrintObjectStructure"
+import GoToTargetClientStructure from "../../map/structures/client_structures/GoToTargetClientStructure"
 
 var structureManagerRef = getStructureManager()
 
@@ -16,7 +17,11 @@ function getDistance(p1: DOMPoint, p2: DOMPoint): number {
   return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2))
 }
 
-export function getPointsAlongCurve(curvePoints: Array<DOMPoint>, length: number, SVGWidth: number, SVGHeight: number): Array<DOMPoint> | undefined {
+export function getPointsAlongCurve(curvePoints: Array<DOMPoint>, 
+    length: number, 
+    SVGWidth: number, 
+    SVGHeight: number,
+    SHOW_SEGMENT_LOCATION: boolean): Array<DOMPoint> | undefined {
 
   // Fetch data required for SVG to map display
   structureManagerRef = getStructureManager()
@@ -148,6 +153,9 @@ export function getPointsAlongCurve(curvePoints: Array<DOMPoint>, length: number
       
     }
     segments.push(currPoint);
+    if (SHOW_SEGMENT_LOCATION) {
+        // structureManagerRef.addClientStructure(new GoToTargetClientStructure(currPoint.x, currPoint.y))
+    }
   }
   console.log("finished slicing")
   return segments;

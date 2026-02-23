@@ -12,6 +12,7 @@ import LocationMarkersStucture from "../map/structures/client_structures/Locatio
 import { PrintObjectStructure } from "../map/structures/client_structures/PrintObjectStructure"
 import { getRobotAngleFromVector } from "../api/geomHelper"
 import { getPointsAlongCurve } from "./componentHelpers/lineParser"
+import { multiPointGoToRef } from "../map/actions/live_map_actions/GoToActionsMultiple"
 
 type UploadStatus = 'idle' | 'uploading' | 'success' | 'error';
 
@@ -20,6 +21,9 @@ var SVGWidth: number
 var SVGHeight: number
 
 var structureManagerRef = getStructureManager()
+
+// Debug vars
+const SHOW_SEGMENT_LOCATION = true;
 
 export function getCurrentFile() : File {
   return fileData
@@ -85,8 +89,26 @@ export async function slice() {
 
         SVGWidth = parseInt(widthStringRep);
         SVGHeight = parseInt(heightStringRep);
-        
 
+        // ACCOUNT FOR CIRCLE CASE
+        // Check for existance of circle and if so, generate points based on properties of circle and then
+        // return to not parse the line method
+        let circleXMLRef = XMLRep.getElementsByTagName("circle")
+        if (typeof circleXMLRef !== "undefined" && circleXMLRef.length > 0) {
+          let circleRef = circleXMLRef[0]
+         
+          let centerOfCircle = new DOMPoint(circleRef.cx.baseVal.value, circleRef.cy.baseVal.value);
+          let radius = circleRef.r.baseVal.value;
+          
+          // Discretize 16 points along the circle in order to convert them to points to be parsed later on
+          for (let i = 15; i >= 0; i--) {
+            let currPoint = new DOMPoint(centerOfCircle.x + (Math.cos(i * (2 / 16 * Math.PI) * radius)),
+              centerOfCircle.y + (Math.sin(i * (2 / 16 * Math.PI))) * radius)
+            points.push(currPoint)
+          }
+          console.log(points)
+        }
+        else {
         // Parse path
         // Requires path that are placed in front to have a ID adjacent and greatrer than (be placed below in the XML)
         // in order for paths to be placed in order and concatenated
@@ -100,6 +122,8 @@ export async function slice() {
               points = points.concat(res);
             }
         }
+        }
+
         console.log(points)
     }
 
@@ -110,7 +134,7 @@ export async function slice() {
       // Last index of spot not covered by print area
       let currsCoveredSpot = 0
 
-      let segmentsEdge: Array<DOMPoint> | undefined = getPointsAlongCurve(points, WIDTH_CONSTANT, SVGWidth, SVGHeight);
+      let segmentsEdge: Array<DOMPoint> | undefined = getPointsAlongCurve(points, WIDTH_CONSTANT, SVGWidth, SVGHeight, SHOW_SEGMENT_LOCATION);
 
       if (typeof segmentsEdge === "undefined") {
         console.error("segmented edges returned incorrectly")
@@ -139,11 +163,19 @@ export async function slice() {
         perpVec = new DOMPoint(perpVec.x / perpVecMag, perpVec.y / perpVecMag);
 
         let robotAoa = getRobotAngleFromVector(perpVec)
+        console.log("aoa " + robotAoa)
         
+        let robotLocX = halfWayPoint.x + (perpVec.x * offsetInPixelSpace);
+        let robotLocY = halfWayPoint.y + (perpVec.y * offsetInPixelSpace);
+
         structureManagerRef.addClientStructure(
-          new LocationMarkersStucture(halfWayPoint.x + (perpVec.x * offsetInPixelSpace), 
-          halfWayPoint.y + (perpVec.y * offsetInPixelSpace), robotAoa, offsetInPixelSpace))
+          new LocationMarkersStucture(robotLocX, 
+          robotLocY, robotAoa, offsetInPixelSpace))
+
+        // Add to multiGoto point as well to print
+        multiPointGoToRef.addDestination(halfWayPoint.x, halfWayPoint.y, robotAoa);
       }
+      console.log(multiPointGoToRef)
     }
 
 }

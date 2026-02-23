@@ -98,6 +98,7 @@ class MultiPointGoToState {
         }
     }
 
+    // Adds go to locations to strcutre
     updateDestinations(goToTarget : GoToTargetClientStructure) {
 
         if (this.hardCoded) {
@@ -118,9 +119,15 @@ class MultiPointGoToState {
         if (!destContainsCoord && typeof goToTarget !== "undefined") {
             console.log("Add " + goToTarget.x0 + ", " + goToTarget.y0)
             // Default angle set to 0, for demonstration purposes, the roborock should always look to the right of the screen
-            let tempTarget = new printLocation(goToTarget.x0, goToTarget.y0, 90);
+            let tempTarget = new printLocation(goToTarget.x0, goToTarget.y0, 0);
             this.destinationsForRoborock.push(tempTarget);
         }
+    }
+
+    // Add location considering the rotation
+    // Takes in coordinates in the pixel space of the map
+    addDestination(x_pos: number, y_pos: number, rotation: number) {
+        // this.destinationsForRoborock.push(new printLocation(x_pos, y_pos, rotation));
     }
 
     async executeConsecGoTo() {
@@ -191,7 +198,7 @@ class MultiPointGoToState {
     }
 }
 
-var multiPointGoToRef = new MultiPointGoToState() 
+export var multiPointGoToRef = new MultiPointGoToState() 
 
 function checkAproxEquals(val1: number, val2: number, thresh: number) {
     var diff = Math.abs(val1 - val2);
@@ -238,9 +245,6 @@ const GoToActions = (
     multiPointGoToRef.updateTraverseFSM(status);
 
     const handleClick = React.useCallback(() => {
-        if (!canGo || !goToTarget) {
-            return;
-        }
         console.log("init multi go to")
         multiPointGoToRef.executeConsecGoTo()
     }, [canGo, goToTarget, goTo, convertPixelCoordinatesToCMSpace]);
@@ -276,7 +280,7 @@ const GoToActions = (
             <Grid2 container spacing={1} direction="row-reverse" flexWrap="wrap-reverse">
                 <Grid2>
                     <ActionButton
-                        disabled={goToIsExecuting || !canGo || !goToTarget}
+                        disabled= { false }
                         color="inherit"
                         size="medium"
                         variant="extended"
