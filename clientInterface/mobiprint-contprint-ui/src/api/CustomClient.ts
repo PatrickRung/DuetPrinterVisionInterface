@@ -20,7 +20,7 @@ export async function roborockRotate(angle: number, cb?: () => void) {
     const ROBOT_STATE_URL = '/api/v2/robot/state';
 
     if (angle > 360 || angle < 0) {
-        console.error("Angle to rotate to must be between !")
+        console.error("Angle to rotate to must be between 360 and 0. Received: " + angle)
         return
     }
     

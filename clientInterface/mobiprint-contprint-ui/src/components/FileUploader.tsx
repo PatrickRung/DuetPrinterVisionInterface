@@ -106,6 +106,8 @@ export async function slice() {
               centerOfCircle.y + (Math.sin(i * (2 / 16 * Math.PI))) * radius)
             points.push(currPoint)
           }
+          points.push(new DOMPoint(centerOfCircle.x + (Math.cos(0) * radius),
+              centerOfCircle.y + (Math.sin(0)) * radius))
           console.log(points)
         }
         else {

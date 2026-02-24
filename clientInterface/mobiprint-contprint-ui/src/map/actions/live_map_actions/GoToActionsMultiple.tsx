@@ -187,7 +187,16 @@ class MultiPointGoToState {
                 // Add slight delay as sending too many commands breaks the backend
                 setTimeout(() => {
                     if (typeof this.currDestination !== "undefined") {  // It WILL be defined however error is being thrown
-                        roborockRotate(this.currDestination.aoa_ + 90, () => {
+                        // Ensure angle is < 360
+                        let desiredAngle = this.currDestination.aoa_ + 90;
+
+                        while (desiredAngle > 360) {
+                            desiredAngle -= 360
+                        }
+                        while (desiredAngle < 0) {
+                            desiredAngle += 360;
+                        }
+                        roborockRotate(desiredAngle, () => {
                             this.executeConsecGoTo()
                         console.log("move onto next")
                     });
