@@ -127,7 +127,7 @@ class MultiPointGoToState {
     // Add location considering the rotation
     // Takes in coordinates in the pixel space of the map
     addDestination(x_pos: number, y_pos: number, rotation: number) {
-        // this.destinationsForRoborock.push(new printLocation(x_pos, y_pos, rotation));
+        this.destinationsForRoborock.push(new printLocation(x_pos, y_pos, rotation));
     }
 
     async executeConsecGoTo() {
@@ -187,12 +187,17 @@ class MultiPointGoToState {
                 // Add slight delay as sending too many commands breaks the backend
                 setTimeout(() => {
                     if (typeof this.currDestination !== "undefined") {  // It WILL be defined however error is being thrown
-                        roborockRotate(this.currDestination.aoa_ + 90);
+                        roborockRotate(this.currDestination.aoa_ + 90, () => {
+                            this.executeConsecGoTo()
+                        console.log("move onto next")
+                    });
                     }
                 }, 500)
 
+                
+
                 // Will handle if there is any more go to commands or if its empty
-                this.executeConsecGoTo()
+                
             }
         }
     }
@@ -225,7 +230,8 @@ const GoToActions = (
     // which is frequent thus keeping the list populated
     React.useEffect(() => {
         if (goToTarget !== undefined) {
-            multiPointGoToRef.updateDestinations(goToTarget);
+            console.error("manually adding points is disabled right now for pipeline")
+            // multiPointGoToRef.updateDestinations(goToTarget);
         }
     }, [goToTarget?.x0, goToTarget?.y0]); // Only run when coordinates change
 

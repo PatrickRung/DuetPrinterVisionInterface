@@ -14,7 +14,7 @@ import { getAngularDir }  from "./geomHelper"
 // the desired angle is reached
 // TODO the rotation is fairly stuttery, we could just keep on sending commands repeatedly instead of waiting for the next poll
 // to send the rotate command
-export async function roborockRotate(angle: number) {
+export async function roborockRotate(angle: number, cb?: () => void) {
     console.log("Starting 90 degree rotation");
     
     const ROBOT_STATE_URL = '/api/v2/robot/state';
@@ -71,6 +71,13 @@ export async function roborockRotate(angle: number) {
             if (angleDiff < 5) {
                 rotationComplete = true;
                 console.log("Rotation complete!");
+                await sendHighResolutionManualControlInteraction({
+                        action: "disable"
+                    });
+                // Execute callback
+                if (typeof cb !== "undefined") {
+                    cb()
+                }
                 break;
             }
 
@@ -93,7 +100,7 @@ export async function roborockRotate(angle: number) {
         console.error("Error during rotation:", error);
         // Try again
         setTimeout(() => {
-            roborockRotate(angle);
+            roborockRotate(angle, cb);
         }, 3000)
 
     }

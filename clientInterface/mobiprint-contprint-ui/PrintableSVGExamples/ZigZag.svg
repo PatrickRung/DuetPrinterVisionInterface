@@ -5,8 +5,8 @@ path variables thus it is nescecary to format them like this. A good reference f
 
 Other wise generally use the bezier curve that can be seen below. These curves are formulated from 3 points where the first is right after the C, and the rest are seperated by the commas. This example seperates them into 3 different coordinates that form a straight line. The first character denotes the position marked by the M
 -->
-  <path d="M0 0 C0 0, 25 12.5, 50 25" stroke="green" fill="green" />
-  <path d="M50 25 C50 25, 25 37.5, 0 50" stroke="green" fill="green" />
-  <path d="M0 50 C0 50, 25 62.5, 50 75" stroke="green" fill="green" />
-  <path d="M50 75 C50 75, 25 87.5, 0 100" stroke="green" fill="green" />
+  <path d="M0 0 C0 0, 25 12.5, 50 25" stroke="#55ff00" fill="green" />
+  <path d="M50 25 C50 25, 25 37.5, 0 50" stroke="#55ff00" fill="green" />
+  <path d="M0 50 C0 50, 25 62.5, 50 75" stroke="#55ff00" fill="green" />
+  <path d="M50 75 C50 75, 25 87.5, 0 100" stroke="#55ff00" fill="green" />
 </svg>

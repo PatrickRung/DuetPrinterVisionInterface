@@ -163,6 +163,7 @@ export async function slice() {
         perpVec = new DOMPoint(perpVec.x / perpVecMag, perpVec.y / perpVecMag);
 
         let robotAoa = getRobotAngleFromVector(perpVec)
+        robotAoa -= 180;
         console.log("aoa " + robotAoa)
         
         let robotLocX = halfWayPoint.x + (perpVec.x * offsetInPixelSpace);
