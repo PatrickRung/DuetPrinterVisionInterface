@@ -101,8 +101,8 @@ export async function slice() {
           let radius = circleRef.r.baseVal.value;
           
           // Discretize 16 points along the circle in order to convert them to points to be parsed later on
-          for (let i = 15; i >= 0; i--) {
-            let currPoint = new DOMPoint(centerOfCircle.x + (Math.cos(i * (2 / 16 * Math.PI) * radius)),
+          for (let i = 0; i < 16; i++) {
+            let currPoint = new DOMPoint(centerOfCircle.x + (Math.cos(i * (2 / 16 * Math.PI)) * radius),
               centerOfCircle.y + (Math.sin(i * (2 / 16 * Math.PI))) * radius)
             points.push(currPoint)
           }
