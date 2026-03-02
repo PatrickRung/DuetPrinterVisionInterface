@@ -5,6 +5,7 @@ import './index.css';
 import reportWebVitals from './reportWebVitals';
 import LiveMapPage from "./map/LiveMapPage.tsx";
 import FileUploader from "./components/FileUploader";
+import BackendBridge from "./components/BackendBridge";
 import { QueryClient , QueryClientProvider } from '@tanstack/react-query';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));

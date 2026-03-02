@@ -160,3 +160,39 @@ export function getPointsAlongCurve(curvePoints: Array<DOMPoint>,
   console.log("finished slicing")
   return segments;
 }
+
+/**
+ * Froma a SVG entry convert the attribute into an array of DOMPoints for easier handling within code
+ * @param {string} Coordinate attributes taken straight out of the SVG
+ * @returns {Array<DOMPoint>} List of points that contian contained within the line
+ */
+export function getPoints(coordinatesAttrib: string) : Array<DOMPoint> {
+  let indexOfC = -1
+  let points = new Array<DOMPoint>;
+  for (let i = 0; i < coordinatesAttrib.length; i++) {
+    if (coordinatesAttrib.at(i) === 'C') {
+      indexOfC = i;
+      break;
+    }
+  }
+
+  if (indexOfC == -1) {
+    throw new Error("Invalid SVG path (does not contain C denoted points)")
+  }
+
+  const coordsAmalgamatedString = coordinatesAttrib.substring(indexOfC + 1, coordinatesAttrib.length);
+  const coordsSplit = coordsAmalgamatedString.split(", ")
+
+  for (let i = 0; i < coordsSplit.length; i++) {
+    let splitXY = coordsSplit.at(i)?.split(" ")
+    if (typeof splitXY !== undefined) {
+      let XCoord = splitXY?.at(0)
+      let YCoord = splitXY?.at(1)
+
+      if (XCoord !== undefined && YCoord != undefined) {
+        points.push(new DOMPoint(parseInt(XCoord), parseInt(YCoord)))
+      }
+    }
+  }
+  return points;
+}

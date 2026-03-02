@@ -9,9 +9,8 @@ import { NoPhotography, StayCurrentPortraitOutlined, X } from '@mui/icons-materi
                                                                                               // we need this
 import { getStructureManager, getCtxWrapper } from "../map/BaseMap"
 import LocationMarkersStucture from "../map/structures/client_structures/LocationMarkersStucture"
-import { PrintObjectStructure } from "../map/structures/client_structures/PrintObjectStructure"
 import { getRobotAngleFromVector } from "../api/geomHelper"
-import { getPointsAlongCurve } from "./componentHelpers/lineParser"
+import { getPointsAlongCurve, getPoints } from "./componentHelpers/lineParser"
 import { multiPointGoToRef } from "../map/actions/live_map_actions/GoToActionsMultiple"
 
 type UploadStatus = 'idle' | 'uploading' | 'success' | 'error';
@@ -27,40 +26,6 @@ const SHOW_SEGMENT_LOCATION = true;
 
 export function getCurrentFile() : File {
   return fileData
-}
-
-function getPoints(coordinatesAttrib: string) : Array<DOMPoint> {
-  let indexOfC = -1
-  let points = new Array<DOMPoint> ;
-  for (let i = 0; i < coordinatesAttrib.length; i++) {
-    if (coordinatesAttrib.at(i) === 'C') {
-      indexOfC = i;
-      break;
-    }
-  }
-
-  if (indexOfC == -1) {
-    throw new Error("Invalid SVG path (does not contain C denoted points)")
-  }
-
-  const coordsAmalgamatedString = coordinatesAttrib.substring(indexOfC + 1, coordinatesAttrib.length);
-  const coordsSplit = coordsAmalgamatedString.split(", ")
-
-  for (let i = 0; i < coordsSplit.length; i++) {
-    let splitXY = coordsSplit.at(i)?.split(" ")
-    if (typeof splitXY !== undefined) {
-      let XCoord = splitXY?.at(0)
-      let YCoord = splitXY?.at(1)
-      console.log(XCoord)
-      console.log(YCoord)
-
-      if (XCoord !== undefined && YCoord != undefined) {
-        console.log("make")
-        points.push(new DOMPoint(parseInt(XCoord), parseInt(YCoord)))
-      }
-    }
-  }
-  return points;
 }
 
 export async function slice() {
@@ -131,10 +96,6 @@ export async function slice() {
 
     // Generate path from points and generate destinations based on bed size
     if (points.length > 0) {
-      let finishedPath = false;
-
-      // Last index of spot not covered by print area
-      let currsCoveredSpot = 0
 
       let segmentsEdge: Array<DOMPoint> | undefined = getPointsAlongCurve(points, WIDTH_CONSTANT, SVGWidth, SVGHeight, SHOW_SEGMENT_LOCATION);
 
@@ -212,9 +173,7 @@ export default function FileUploader() {
   // XML parsing inspired by https://stackoverflow.com/questions/17604071/parse-xml-using-javascript
   async function handleFileUpload() {
     if (!file) return;
-
     fileData = file
-
     setStatus('success')
   }
 
