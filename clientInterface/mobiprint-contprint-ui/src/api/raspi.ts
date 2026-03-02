@@ -5,9 +5,9 @@ export const raspiAPI = axios.create({
     baseURL: raspiAPIBaseURL,
 });
 
-export const fetchStateAttributes = async () => {
+export const sliceData = async (data: string) => {
     return raspiAPI
-        .put("/raspi")
+        .post("/slice", { data })
         .then(({data}) => {
             return data;
         });

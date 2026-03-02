@@ -10,6 +10,7 @@ import { NoPhotography, StayCurrentPortraitOutlined, X } from '@mui/icons-materi
 import { getStructureManager, getCtxWrapper } from "../map/BaseMap"
 import LocationMarkersStucture from "../map/structures/client_structures/LocationMarkersStucture"
 import { getRobotAngleFromVector } from "../api/geomHelper"
+import { sliceData } from "../api/raspi"
 import { getPointsAlongCurve, getPoints } from "./componentHelpers/lineParser"
 import { multiPointGoToRef } from "../map/actions/live_map_actions/GoToActionsMultiple"
 
@@ -30,68 +31,75 @@ export function getCurrentFile() : File {
 
 export async function slice() {
 
-    // Verify structure manager exists
-    structureManagerRef = getStructureManager();
-    console.log("try")
+  let testingText = '{ "employees" : [' +
+  '{ "firstName":"John" , "lastName":"Doe" },' +
+  '{ "firstName":"Anna" , "lastName":"Smith" },' +
+  '{ "firstName":"Peter" , "lastName":"Jones" } ]}';
+  const jsonObj = JSON.parse(testingText);
+  sliceData("test")
 
-    // State for the slicing process
-    let points: Array<DOMPoint> = [];
+  // Verify structure manager exists
+  structureManagerRef = getStructureManager();
+  console.log("try")
 
-    if (fileData !== null) {
-        let text = await fileData.text()
+  // State for the slicing process
+  let points: Array<DOMPoint> = [];
 
-        var parser = new DOMParser();
-        let XMLRep = parser.parseFromString(text, "text/xml")
-        const svgElement = XMLRep.documentElement
-        const widthStringRep = svgElement.getAttribute("width")
-        const heightStringRep = svgElement.getAttribute("height")
+  if (fileData !== null) {
+      let text = await fileData.text()
 
-        if (widthStringRep === null || 
-          heightStringRep === null) {
-          console.error("file incorrect");
-          return;
+      var parser = new DOMParser();
+      let XMLRep = parser.parseFromString(text, "text/xml")
+      const svgElement = XMLRep.documentElement
+      const widthStringRep = svgElement.getAttribute("width")
+      const heightStringRep = svgElement.getAttribute("height")
+
+      if (widthStringRep === null || 
+        heightStringRep === null) {
+        console.error("file incorrect");
+        return;
+      }
+
+      SVGWidth = parseInt(widthStringRep);
+      SVGHeight = parseInt(heightStringRep);
+
+      // ACCOUNT FOR CIRCLE CASE
+      // Check for existance of circle and if so, generate points based on properties of circle and then
+      // return to not parse the line method
+      let circleXMLRef = XMLRep.getElementsByTagName("circle")
+      if (typeof circleXMLRef !== "undefined" && circleXMLRef.length > 0) {
+        let circleRef = circleXMLRef[0]
+        
+        let centerOfCircle = new DOMPoint(circleRef.cx.baseVal.value, circleRef.cy.baseVal.value);
+        let radius = circleRef.r.baseVal.value;
+        
+        // Discretize 16 points along the circle in order to convert them to points to be parsed later on
+        for (let i = 0; i < 16; i++) {
+          let currPoint = new DOMPoint(centerOfCircle.x + (Math.cos(i * (2 / 16 * Math.PI)) * radius),
+            centerOfCircle.y + (Math.sin(i * (2 / 16 * Math.PI))) * radius)
+          points.push(currPoint)
         }
-
-        SVGWidth = parseInt(widthStringRep);
-        SVGHeight = parseInt(heightStringRep);
-
-        // ACCOUNT FOR CIRCLE CASE
-        // Check for existance of circle and if so, generate points based on properties of circle and then
-        // return to not parse the line method
-        let circleXMLRef = XMLRep.getElementsByTagName("circle")
-        if (typeof circleXMLRef !== "undefined" && circleXMLRef.length > 0) {
-          let circleRef = circleXMLRef[0]
-         
-          let centerOfCircle = new DOMPoint(circleRef.cx.baseVal.value, circleRef.cy.baseVal.value);
-          let radius = circleRef.r.baseVal.value;
-          
-          // Discretize 16 points along the circle in order to convert them to points to be parsed later on
-          for (let i = 0; i < 16; i++) {
-            let currPoint = new DOMPoint(centerOfCircle.x + (Math.cos(i * (2 / 16 * Math.PI)) * radius),
-              centerOfCircle.y + (Math.sin(i * (2 / 16 * Math.PI))) * radius)
-            points.push(currPoint)
-          }
-          points.push(new DOMPoint(centerOfCircle.x + (Math.cos(0) * radius),
-              centerOfCircle.y + (Math.sin(0)) * radius))
-          console.log(points)
-        }
-        else {
-        // Parse path
-        // Requires path that are placed in front to have a ID adjacent and greatrer than (be placed below in the XML)
-        // in order for paths to be placed in order and concatenated
-        let line = XMLRep.getElementsByTagName("path")
-        // Mark as parsed
-        for (let index = 0; index < line.length; index++) {
-            let currLine = line.item(index);
-            let attrib = currLine?.getAttribute("d")
-            if (attrib != null) {
-              let res = getPoints(attrib);
-              points = points.concat(res);
-            }
-        }
-        }
-
+        points.push(new DOMPoint(centerOfCircle.x + (Math.cos(0) * radius),
+            centerOfCircle.y + (Math.sin(0)) * radius))
         console.log(points)
+      }
+      else {
+      // Parse path
+      // Requires path that are placed in front to have a ID adjacent and greatrer than (be placed below in the XML)
+      // in order for paths to be placed in order and concatenated
+      let line = XMLRep.getElementsByTagName("path")
+      // Mark as parsed
+      for (let index = 0; index < line.length; index++) {
+          let currLine = line.item(index);
+          let attrib = currLine?.getAttribute("d")
+          if (attrib != null) {
+            let res = getPoints(attrib);
+            points = points.concat(res);
+          }
+      }
+      }
+
+      console.log(points)
     }
 
     // Generate path from points and generate destinations based on bed size

@@ -6,14 +6,11 @@ app = Flask(__name__)
 def hello_world():
     return 'Hello World'
 
-@app.route('/', methods=['GET'])
-def home():
-    return jsonify({'data': 'hello world'})
-
-@app.route('/slice', methods=['PUT'])
-def events():
-    event_data = request.json
+@app.route('/slice', methods=['POST'])
+def slice():
+    event_data = request.get_json()
     print(event_data)
+    return 'Sliced'
 
 if __name__ == '__main__':
     app.run()
