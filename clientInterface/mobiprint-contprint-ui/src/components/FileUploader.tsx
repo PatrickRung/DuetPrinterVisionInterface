@@ -149,15 +149,30 @@ export async function slice() {
       let offsetInPixelSpace = getStructureManager().convertCMLengthToPixelSpace(OFFSET)
 
       // Iterate through points (considers two adjacent points and formulates position perpendicular to both)
-      for (let pointIndex = 0; pointIndex < segmentsEdge.length - 1; pointIndex++) {
-        console.log("here")
+      for (let pointIndex = 0; pointIndex < segmentsEdge.length; pointIndex++) {
 
         // Get vector between points
-        let p1 = segmentsEdge[pointIndex];
-        let p2 = segmentsEdge[pointIndex + 1];
+        let p1;
+        let p2;
+
+        if (pointIndex < segmentsEdge.length - 1) {
+          p1 = segmentsEdge[pointIndex];
+          p2 = segmentsEdge[pointIndex + 1];
+        }
+        else {
+          // Last case which uses same tangent however uses last point as print location
+          p1 = segmentsEdge[pointIndex - 1];
+          p2 = segmentsEdge[pointIndex];
+        }
 
         let vec = new DOMPoint(p2.x - p1.x, p2.y - p1.y);
-        let halfWayPoint = new DOMPoint(p1.x + (vec.x / 2), p1.y + (vec.y / 2));
+        let halfWayPoint;
+        if (pointIndex < segmentsEdge.length - 1) {
+          halfWayPoint = new DOMPoint(p1.x + (vec.x / 2), p1.y + (vec.y / 2));
+        }
+        else {
+          halfWayPoint = p2;
+        }
         let perpVec = new DOMPoint(vec.y, -vec.x);
 
         // Get unit vec of perpendicular vector
