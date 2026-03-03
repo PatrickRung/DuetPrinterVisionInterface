@@ -1,0 +1,9 @@
+<svg width="1" height="100" xmlns="http://www.w3.org/2000/svg">
+<!--
+This is the primary exampel for how paths to be parsed by the SVG parser will work. The slicer will only understand
+path variables thus it is nescecary to format them like this. A good reference for SVG style can be found here https://developer.mozilla.org/en-US/docs/Web/SVG/Tutorials/SVG_from_scratch/Paths
+
+Other wise generally use the bezier curve that can be seen below. These curves are formulated from 3 points where the first is right after the C, and the rest are seperated by the commas. This example seperates them into 3 different coordinates that form a straight line. The first character denotes the position marked by the M
+-->
+  <path d="M0.5 0 C0.5 0, 0.5 50, 0.5 100" stroke="#55ff004e" fill="green" />
+</svg>

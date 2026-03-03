@@ -23,7 +23,6 @@ def send_simple_code():
         finally:
             command_connection.close()
 
-
 if __name__ == "__main__":
 
     # Establish connection to duet DSF

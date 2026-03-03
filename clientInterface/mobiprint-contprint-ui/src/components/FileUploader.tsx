@@ -31,13 +31,6 @@ export function getCurrentFile() : File {
 
 export async function slice() {
 
-  let testingText = '{ "employees" : [' +
-  '{ "firstName":"John" , "lastName":"Doe" },' +
-  '{ "firstName":"Anna" , "lastName":"Smith" },' +
-  '{ "firstName":"Peter" , "lastName":"Jones" } ]}';
-  const jsonObj = JSON.parse(testingText);
-  sliceData("test")
-
   // Verify structure manager exists
   structureManagerRef = getStructureManager();
   console.log("try")
@@ -97,7 +90,7 @@ export async function slice() {
             points = points.concat(res);
           }
       }
-      }
+    }
 
       console.log(points)
     }
@@ -165,6 +158,11 @@ export async function slice() {
       console.log(multiPointGoToRef)
     }
 
+  let testingText = '{ "employees" : [' +
+  '{ "firstName":"John" , "lastName":"Doe" },' +
+  '{ "firstName":"Anna" , "lastName":"Smith" },' +
+  '{ "firstName":"Peter" , "lastName":"Jones" } ]}';
+  sliceData(testingText)
 }
 
 export default function FileUploader() {
@@ -182,6 +180,7 @@ export default function FileUploader() {
   async function handleFileUpload() {
     if (!file) return;
     fileData = file
+    console.log(typeof fileData)
     setStatus('success')
   }
 

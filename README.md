@@ -16,6 +16,9 @@ source myenv/bin/activate
 - python -m pip install opencv-contrib-python         # Required to be opencv-contrib due to use of pose estimation
 - python -m pip install scipy                         # For matrix calculations
 - python -m pip install flask flask-restful           # For python webserver to handle Raspberry PI API calls (Yes the architcture is kind of crazy right now)
+- python -m pip install svg.path                      # For SVG line parsing
+- pip install matplotlib                              # For debugging SVG line placement
+- pip install PyQt6                                   # Bug fix for matplot lib displaying
 
 If dependency issues still arise, you might need to install the following packages.
 python3 -m pip install picamera2
