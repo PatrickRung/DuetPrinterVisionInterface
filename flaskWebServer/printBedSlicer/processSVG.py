@@ -7,6 +7,9 @@ from xml.dom.minidom import parse, parseString, Document
 import matplotlib.pyplot as plt
 import numpy as np
 
+# Local modules
+from rendering import renderingHelper
+
 def compPoint(p1, p2):
     status = p1[0] == p2[0] and p1[1] == p2[1]
     print(status)
@@ -20,6 +23,8 @@ def sliceToPrintBed(SVGFileInput: str,
                     SVGHeightCM: int,
                     printBedWidthCM: int, 
                     printBedHeightCM: int):
+    
+    renderingHelper.display_svg(SVGFileInput)
 
     # read the SVG file
     domSVG = parseString(SVGFileInput)
@@ -34,14 +39,19 @@ def sliceToPrintBed(SVGFileInput: str,
     # If these are different length we went wrong somewhere
     assert len(path_strings) == len(path_raw_xml)
 
-    
-
     fig, ax = plt.subplots()
     fig.set_figheight(10)
     fig.set_figwidth(10)
 
     currPoint = [-1, -1]
     currXMLChunkedLines = []
+    # List containing strings of SVG files that will be converted and sent to SVG -> GCode slicer
+    SVGStrings = []
+
+    # REWRITE
+    # Iterate through path considering the chunks first, essentially keep popping lines until print bed is exhausted
+    # for better chunking handling
+    
     
     # Draw the shape out on MatPlotLib
     iterator = 0
@@ -50,10 +60,16 @@ def sliceToPrintBed(SVGFileInput: str,
         # Assume that there is only one element per path
         # Move to end of print bed
         printBedDistRemaining = printBedWidthCM
+        currChunkDoc = minidom.Document()
 
-        for currElement in path:
+        while (printBedDistRemaining > 0):
+            # Ran out of paths go to next loop to get more line distance
+            if (len(path) == 0):
+                break
+            currElement = path.pop()
+            print(type(currElement))
+
             if isinstance(currElement, Line):
-                
                 # Get data
                 x0 = currElement.start.real
                 y0 = currElement.start.imag
@@ -78,8 +94,15 @@ def sliceToPrintBed(SVGFileInput: str,
                 # Handle cases
                 # Line does not cover print bed
                 if printBedDistRemaining - currPointEndLineDist > 0:
-                    currLineXML = path_raw_xml[iterator]
-                    currXMLChunkedLines.append(currLineXML)
+                    # Initiate temp doc for creating non linked path (no parent document)
+
+                    pathRef = currChunkDoc.createElement("path")
+                    path_data = f"M {cacheCurrPoint[0]} {cacheCurrPoint[1]} L {bisect_point[0]} {bisect_point[1]}"
+                    pathRef.setAttribute("d", path_data)
+                    pathRef.setAttribute("stroke", "#55ff00")
+
+                    currXMLChunkedLines.append(pathRef)
+
                     printBedDistRemaining -= currPointEndLineDist
                     currPoint = np.array([x1, y1])
 
@@ -87,33 +110,66 @@ def sliceToPrintBed(SVGFileInput: str,
                     # TODO End this chunk no need to bisect start on next line (Will handle this later)
                     pass
 
-                # Line finished the rest of print bed, splice line at ending point,
-                # manipulate next part of line to be spliced at end of print bed. 
-                # Finally create print section using the finished chunks data for printer
-                # Add ArUco marker as well
+                # Case where print bed 
                 else:
-                    while (currPointEndLineDist > 0):
-                        # Find bisection point
-                        if currPointEndLineDist - printBedWidthCM < 0:
-                            currPoint = np.array([x1, y1])
-                            break
-                        unit = (endPoint - startPoint) / pointDist(startPoint, endPoint)
-                        bisect_point = currPoint + (unit * printBedDistRemaining)
-                        print(bisect_point)
-                        ax.plot(bisect_point[0], bisect_point[1], marker='o')
-                        currPoint = bisect_point
-                        print("Bisect " + str(bisect_point))
-                        print(printBedDistRemaining)
-                        currPointEndLineDist -= printBedDistRemaining
-                        printBedDistRemaining = printBedWidthCM
+                    cacheCurrPoint = currPoint
+
+                    # Find bisection point
+                    unit = (endPoint - startPoint) / pointDist(startPoint, endPoint)
+                    bisect_point = currPoint + (unit * printBedDistRemaining)
+                    ax.plot(bisect_point[0], bisect_point[1], marker='o')
+                    currPoint = bisect_point
+
+                    # By bisecting a line we guarantee that this line has been cut into multiple lines
+                    printBedDistRemaining = 0
+
+                    # Append bisected lines
+                    path_data = f"M {cacheCurrPoint[0]} {cacheCurrPoint[1]} L {bisect_point[0]} {bisect_point[1]}"
+                    newBisectedPath = currChunkDoc.createElement("path")
+                    newBisectedPath.setAttribute("d", path_data)
+                    newBisectedPath.setAttribute("stroke", "#55ff00")
+                    currXMLChunkedLines.append(newBisectedPath)
+
+                    # Create <svg> root element
+                    svg = currChunkDoc.createElement("svg")
+                    svg.setAttribute("xmlns", "http://www.w3.org/2000/svg")
+                    svg.setAttribute("width", str(100))
+                    svg.setAttribute("height", str(100))
+                    currChunkDoc.appendChild(svg)
+
+                    # Add all lines into 
+                    for line in currXMLChunkedLines:
+                        svg.appendChild(line)
+
+                    # Remove all data corresponding for current print bed to prepare for next bed
+                    currXMLChunkedLines.clear()
+
+                    xmlAsString = currChunkDoc.toprettyxml()
+                    print("Current XML: " + str(xmlAsString))
+                    renderingHelper.display_svg(xmlAsString)
+                    print("chunk")
 
         iterator += 1
+    
+    # If there is left over chunk data append that to a chunk as well
+    if len(currXMLChunkedLines) > 0:
+        for line in currXMLChunkedLines:
+            svg.appendChild(line)
+
+        # Remove all data corresponding for current print bed to prepare for next bed
+        currXMLChunkedLines.clear()
+
+        xmlAsString = currChunkDoc.toprettyxml()
+        print("Current XML: " + str(xmlAsString))
+        renderingHelper.display_svg(xmlAsString)
+
 
     plt.show()
-    # Process chunks
+    # Process 
 
-    
-    
+# printOrientation is the direction of the vector 
+def processChunkData(self, printerOrientation):
+    pass
 
 if __name__ == '__main__':
     # Only need os for testing
@@ -123,4 +179,4 @@ if __name__ == '__main__':
     filename = "testSVG/ZigZagLine.svg"
     with open(filename) as f:
         s = f.read()
-        sliceToPrintBed(s, 1, 1, 10, 1)
+        sliceToPrintBed(s, 1, 1, 20, 1)
