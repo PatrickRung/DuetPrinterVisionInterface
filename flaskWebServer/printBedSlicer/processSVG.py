@@ -7,6 +7,9 @@ from xml.dom.minidom import parse, parseString, Document
 import matplotlib.pyplot as plt
 import numpy as np
 
+# Local imports
+from rendering.chunkRepresentation import chunkRepresentation
+
 def compPoint(p1, p2):
     status = p1[0] == p2[0] and p1[1] == p2[1]
     print(status)
@@ -41,7 +44,10 @@ def sliceToPrintBed(SVGFileInput: str,
     fig.set_figwidth(10)
 
     currPoint = [-1, -1]
-    currXMLChunkedLines = []
+    chunkRepList = []
+
+    # Each chunk has it's own dedicated XML document that will be converted to XML later down the line
+    currChunk = chunkRepresentation()
     
     # Draw the shape out on MatPlotLib
     iterator = 0
@@ -97,6 +103,11 @@ def sliceToPrintBed(SVGFileInput: str,
                         if currPointEndLineDist - printBedWidthCM < 0:
                             currPoint = np.array([x1, y1])
                             break
+
+                        # Store current point for reference later
+                        cachedCurrPoint = currPoint
+
+                        # Get bisection point where the chunk ends
                         unit = (endPoint - startPoint) / pointDist(startPoint, endPoint)
                         bisect_point = currPoint + (unit * printBedDistRemaining)
                         print(bisect_point)
@@ -104,8 +115,22 @@ def sliceToPrintBed(SVGFileInput: str,
                         currPoint = bisect_point
                         print("Bisect " + str(bisect_point))
                         print(printBedDistRemaining)
+
+                        # Update path tracing state
                         currPointEndLineDist -= printBedDistRemaining
                         printBedDistRemaining = printBedWidthCM
+
+                        # Handle SVG
+                        currChunk.appendLine(cachedCurrPoint[0], 
+                                             cachedCurrPoint[1],
+                                             bisect_point[0], 
+                                             bisect_point[1])
+                        currChunk.displayChunk()
+
+                        # Reset chunk data and account for chunk
+                        chunkRepList.append(currChunk)
+                        currChunk = chunkRepresentation()
+                        
 
         iterator += 1
 
