@@ -37,8 +37,6 @@ def sliceToPrintBed(SVGFileInput: str,
     # If these are different length we went wrong somewhere
     assert len(path_strings) == len(path_raw_xml)
 
-    
-
     fig, ax = plt.subplots()
     fig.set_figheight(10)
     fig.set_figwidth(10)
@@ -51,11 +49,11 @@ def sliceToPrintBed(SVGFileInput: str,
     
     # Draw the shape out on MatPlotLib
     iterator = 0
+    printBedDistRemaining = printBedWidthCM
     for path_string in path_strings:
         path = parse_path(path_string)
         # Assume that there is only one element per path
         # Move to end of print bed
-        printBedDistRemaining = printBedWidthCM
 
         for currElement in path:
             if isinstance(currElement, Line):
@@ -81,64 +79,43 @@ def sliceToPrintBed(SVGFileInput: str,
 
                 currPointEndLineDist = pointDist(currPoint, np.array([x1, y1]))
 
-                # Handle cases
-                # Line does not cover print bed
-                if printBedDistRemaining - currPointEndLineDist > 0:
-                    currLineXML = path_raw_xml[iterator]
-                    currXMLChunkedLines.append(currLineXML)
-                    printBedDistRemaining -= currPointEndLineDist
-                    currPoint = np.array([x1, y1])
+                while (currPointEndLineDist > 0):
+                    # Find bisection point
+                    currPointEndLineDist = pointDist(currPoint, np.array([x1, y1]))
+                    if currPointEndLineDist - printBedWidthCM < 0:
+                        currChunk.appendLine(currPoint[0], currPoint[1], x1, y1)
+                        printBedDistRemaining -= currPointEndLineDist
+                        print("Dist between points " + str(currPointEndLineDist))
+                        currPoint = np.array([x1, y1])
+                        break
 
-                elif printBedDistRemaining == 0:
-                    # TODO End this chunk no need to bisect start on next line (Will handle this later)
-                    pass
+                    # Store current point for reference later
+                    cachedCurrPoint = currPoint
 
-                # Line finished the rest of print bed, splice line at ending point,
-                # manipulate next part of line to be spliced at end of print bed. 
-                # Finally create print section using the finished chunks data for printer
-                # Add ArUco marker as well
-                else:
-                    while (currPointEndLineDist > 0):
-                        # Find bisection point
-                        if currPointEndLineDist - printBedWidthCM < 0:
-                            currPoint = np.array([x1, y1])
-                            break
+                    # Get bisection point where the chunk ends
+                    unit = (endPoint - startPoint) / pointDist(startPoint, endPoint)
+                    bisect_point = currPoint + (unit * printBedDistRemaining)
+                    ax.plot(bisect_point[0], bisect_point[1], marker='o')
+                    currPoint = bisect_point
 
-                        # Store current point for reference later
-                        cachedCurrPoint = currPoint
+                    # Update path tracing state
+                    printBedDistRemaining = printBedWidthCM
 
-                        # Get bisection point where the chunk ends
-                        unit = (endPoint - startPoint) / pointDist(startPoint, endPoint)
-                        bisect_point = currPoint + (unit * printBedDistRemaining)
-                        print(bisect_point)
-                        ax.plot(bisect_point[0], bisect_point[1], marker='o')
-                        currPoint = bisect_point
-                        print("Bisect " + str(bisect_point))
-                        print(printBedDistRemaining)
+                    # Handle SVG
+                    currChunk.appendLine(cachedCurrPoint[0], 
+                                            cachedCurrPoint[1],
+                                            bisect_point[0], 
+                                            bisect_point[1])
+                    currChunk.displayChunk()
 
-                        # Update path tracing state
-                        currPointEndLineDist -= printBedDistRemaining
-                        printBedDistRemaining = printBedWidthCM
-
-                        # Handle SVG
-                        currChunk.appendLine(cachedCurrPoint[0], 
-                                             cachedCurrPoint[1],
-                                             bisect_point[0], 
-                                             bisect_point[1])
-                        currChunk.displayChunk()
-
-                        # Reset chunk data and account for chunk
-                        chunkRepList.append(currChunk)
-                        currChunk = chunkRepresentation()
-                        
+                    # Reset chunk data and account for chunk
+                    chunkRepList.append(currChunk)
+                    currChunk = chunkRepresentation()
 
         iterator += 1
 
     plt.show()
     # Process chunks
-
-    
-    
 
 if __name__ == '__main__':
     # Only need os for testing
@@ -148,4 +125,4 @@ if __name__ == '__main__':
     filename = "testSVG/ZigZagLine.svg"
     with open(filename) as f:
         s = f.read()
-        sliceToPrintBed(s, 1, 1, 10, 1)
+        sliceToPrintBed(s, 1, 1, 20, 1)
