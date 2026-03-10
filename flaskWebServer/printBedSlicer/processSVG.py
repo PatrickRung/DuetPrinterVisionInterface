@@ -106,10 +106,12 @@ def sliceToPrintBed(SVGFileInput: str,
                                             cachedCurrPoint[1],
                                             bisect_point[0], 
                                             bisect_point[1])
-                    currChunk.displayChunk()
 
                     # Reset chunk data and account for chunk
                     chunkRepList.append(currChunk)
+                    currChunk.reorientInPrintSpace(90)
+                    currChunk.displayChunk()
+                    # currChunk.displayChunk()
                     currChunk = chunkRepresentation()
 
         iterator += 1
