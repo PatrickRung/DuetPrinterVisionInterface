@@ -4,7 +4,7 @@ module.exports = function (app) {
   app.use(
     '/roborock',
     createProxyMiddleware({
-      target: 'http://192.168.2.29',
+      target: 'http://192.168.0.82',
       changeOrigin: true,
       pathRewrite: {
         '^/api1': '',

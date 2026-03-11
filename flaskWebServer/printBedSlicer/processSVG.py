@@ -18,6 +18,7 @@ def compPoint(p1, p2):
 def pointDist(p1, p2):
     return np.sqrt(np.square(p1[0] - p2[0]) + np.square(p1[1] - p2[1]))
 
+# The SVG will fit the entire size of the bed size.
 def sliceToPrintBed(SVGFileInput: str, 
                     SVGWidthCM: int,
                     SVGHeightCM: int,
@@ -26,6 +27,11 @@ def sliceToPrintBed(SVGFileInput: str,
 
     # read the SVG file
     domSVG = parseString(SVGFileInput)
+    svgRef = domSVG.getElementsByTagName('svg')
+
+    pixelWidth = svgRef[0].getAttribute('width')
+    pixelHeight = svgRef[0].getAttribute('width')
+    
     path_strings = [path.getAttribute('d') for path
                     in domSVG.getElementsByTagName('path')]
     
@@ -37,6 +43,10 @@ def sliceToPrintBed(SVGFileInput: str,
     # If these are different length we went wrong somewhere
     assert len(path_strings) == len(path_raw_xml)
 
+    # Multiply any pixel value against these values to get the CM width
+    pixelToCMWidth = SVGWidthCM / int(pixelWidth)
+    pixelToCmHeight = SVGHeightCM / int(pixelHeight)
+
     fig, ax = plt.subplots()
     fig.set_figheight(10)
     fig.set_figwidth(10)
@@ -45,7 +55,7 @@ def sliceToPrintBed(SVGFileInput: str,
     chunkRepList = []
 
     # Each chunk has it's own dedicated XML document that will be converted to XML later down the line
-    currChunk = chunkRepresentation()
+    currChunk = chunkRepresentation(printBedWidthCM, printBedHeightCM)
     
     # Draw the shape out on MatPlotLib
     iterator = 0
@@ -109,10 +119,10 @@ def sliceToPrintBed(SVGFileInput: str,
 
                     # Reset chunk data and account for chunk
                     chunkRepList.append(currChunk)
-                    currChunk.reorientInPrintSpace(90)
+                    currChunk.reorientInPrintSpace(pixelToCMWidth, pixelToCmHeight)
                     currChunk.displayChunk()
                     # currChunk.displayChunk()
-                    currChunk = chunkRepresentation()
+                    currChunk = chunkRepresentation(printBedWidthCM, printBedHeightCM)
 
         iterator += 1
 
@@ -127,4 +137,7 @@ if __name__ == '__main__':
     filename = "testSVG/ZigZagLine.svg"
     with open(filename) as f:
         s = f.read()
-        sliceToPrintBed(s, 1, 1, 20, 1)
+
+        # Real potential dimmensions
+        # Prusa bed size 33 length, 33 width
+        sliceToPrintBed(s, 75, 75, 33, 33)
