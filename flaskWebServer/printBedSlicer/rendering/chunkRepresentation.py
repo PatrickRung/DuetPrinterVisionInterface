@@ -100,8 +100,8 @@ class chunkRepresentation(XMLRep):
         if dir_len > 0:
             dir_vec = dir_vec / dir_len
 
-        # 90° CCW rotation: (x, y) -> (-y, x)
-        perp_vec = np.array([-dir_vec[1], dir_vec[0]])
+        # Rotate offset might need to be cw or ccw depending on print bed orientation
+        perp_vec = np.array([dir_vec[1], -dir_vec[0]])
         offset = perp_vec * ARUCO_MARKER_LENGTH
 
         # Marker at lineOneStart: offset outward so the square sits outside the lines
