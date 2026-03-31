@@ -1,8 +1,8 @@
 from xml.dom import minidom
 from abc import ABC, abstractmethod
 
-# Local imports
-from rendering.renderingHelper import display_svg
+# Local imports (Use a . in front for relative dir imports)
+from .renderingHelper import display_svg
 import numpy as np
 
 ARUCO_MARKER_LENGTH = 5

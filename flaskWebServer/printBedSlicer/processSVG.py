@@ -7,8 +7,8 @@ from xml.dom.minidom import parse, parseString, Document
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Local imports
-from rendering.chunkRepresentation import chunkRepresentation
+# Local imports (Use a . in front for relative dir imports)
+from .rendering.chunkRepresentation import chunkRepresentation
 
 def compPoint(p1, p2):
     status = p1[0] == p2[0] and p1[1] == p2[1]
@@ -126,7 +126,9 @@ def sliceToPrintBed(SVGFileInput: str,
 
         iterator += 1
 
-    plt.show()
+    # Only display when debugging
+    if __name__ == '__main__':
+        plt.show()
     # Process chunks
 
 if __name__ == '__main__':

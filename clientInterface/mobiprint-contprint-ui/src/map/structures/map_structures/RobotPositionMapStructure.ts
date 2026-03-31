@@ -13,7 +13,7 @@ img.src = robotIconSVG;
 const areaImage = new Image();
 areaImage.src = robotPrintBed;
 
-// These constants are used code wide
+// These constants are used code wide and declared in CM
 export const WIDTH_CONSTANT = 40
 export const LENGTH_CONSTANT = 20
 

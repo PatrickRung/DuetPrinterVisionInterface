@@ -3,7 +3,7 @@
 // at some point PLEASE PLEASE PLEASE move the math to another folder, this file is way to large and complicated
 import axios from 'axios';
 import { ChangeEvent, useState } from 'react';
-import { WIDTH_CONSTANT, OFFSET } from "../map/structures/map_structures/RobotPositionMapStructure";  // When we slice we want to know how many segments
+import { WIDTH_CONSTANT, LENGTH_CONSTANT } from "../map/structures/map_structures/RobotPositionMapStructure";  // When we slice we want to know how many segments
 import { NoPhotography, StayCurrentPortraitOutlined, X } from '@mui/icons-material';
                                                                                               // to chunk up to relative to the print size thus
                                                                                               // we need this
@@ -13,6 +13,7 @@ import { getRobotAngleFromVector } from "../api/geomHelper"
 import { sliceData } from "../api/raspi"
 import { getPointsAlongCurve, getPoints } from "./componentHelpers/lineParser"
 import { multiPointGoToRef } from "../map/actions/live_map_actions/GoToActionsMultiple"
+import { PrintObjectStructure } from "../map/structures/client_structures/PrintObjectStructure"
 
 type UploadStatus = 'idle' | 'uploading' | 'success' | 'error';
 
@@ -31,138 +32,60 @@ export function getCurrentFile() : File {
 
 export async function slice() {
 
-  // Verify structure manager exists
-  structureManagerRef = getStructureManager();
-  console.log("try")
-
-  // State for the slicing process
-  let points: Array<DOMPoint> = [];
-
   if (fileData !== null) {
-      let text = await fileData.text()
+    let SVGFileDataText = await fileData.text()
 
-      var parser = new DOMParser();
-      let XMLRep = parser.parseFromString(text, "text/xml")
-      const svgElement = XMLRep.documentElement
-      const widthStringRep = svgElement.getAttribute("width")
-      const heightStringRep = svgElement.getAttribute("height")
+    // Compile all required data
+    var parser = new DOMParser();
+    let XMLRep = parser.parseFromString(SVGFileDataText, "text/xml")
+    const svgElement = XMLRep.documentElement
+    const widthStringRep = svgElement.getAttribute("width")
+    const heightStringRep = svgElement.getAttribute("height")
 
-      if (widthStringRep === null || 
-        heightStringRep === null) {
-        console.error("file incorrect");
-        return;
-      }
-
-      SVGWidth = parseInt(widthStringRep);
-      SVGHeight = parseInt(heightStringRep);
-
-      // ACCOUNT FOR CIRCLE CASE
-      // Check for existance of circle and if so, generate points based on properties of circle and then
-      // return to not parse the line method
-      let circleXMLRef = XMLRep.getElementsByTagName("circle")
-      if (typeof circleXMLRef !== "undefined" && circleXMLRef.length > 0) {
-        let circleRef = circleXMLRef[0]
-        
-        let centerOfCircle = new DOMPoint(circleRef.cx.baseVal.value, circleRef.cy.baseVal.value);
-        let radius = circleRef.r.baseVal.value;
-        
-        // Discretize 16 points along the circle in order to convert them to points to be parsed later on
-        for (let i = 0; i < 16; i++) {
-          let currPoint = new DOMPoint(centerOfCircle.x + (Math.cos(i * (2 / 16 * Math.PI)) * radius),
-            centerOfCircle.y + (Math.sin(i * (2 / 16 * Math.PI))) * radius)
-          points.push(currPoint)
-        }
-        points.push(new DOMPoint(centerOfCircle.x + (Math.cos(0) * radius),
-            centerOfCircle.y + (Math.sin(0)) * radius))
-        console.log(points)
-      }
-      else {
-      // Parse path
-      // Requires path that are placed in front to have a ID adjacent and greatrer than (be placed below in the XML)
-      // in order for paths to be placed in order and concatenated
-      let line = XMLRep.getElementsByTagName("path")
-      // Mark as parsed
-      for (let index = 0; index < line.length; index++) {
-          let currLine = line.item(index);
-          let attrib = currLine?.getAttribute("d")
-          if (attrib != null) {
-            let res = getPoints(attrib);
-            points = points.concat(res);
-          }
-      }
+    if (widthStringRep === null || 
+      heightStringRep === null) {
+      console.error("file incorrect");
+      return;
     }
 
-      console.log(points)
+    let SVGWidth = parseInt(widthStringRep);
+    let SVGHeight = parseInt(heightStringRep);
+
+    // Refetch in case it does not exist
+    structureManagerRef = getStructureManager()
+
+    // Retreive data about image in browser sapce
+    let boundingBoxRef = structureManagerRef.getClientStructures().find(
+      (structure): structure is PrintObjectStructure => { return structure instanceof PrintObjectStructure });
+
+    if (boundingBoxRef === undefined) {
+      throw Error("No Bounding box found on UI, was the SVG uploaded and placed on the map?")
     }
 
-    // Generate path from points and generate destinations based on bed size
-    if (points.length > 0) {
+    let inMapBoundingBoxDim = {x: Math.abs(boundingBoxRef.x0 - boundingBoxRef.x1), y: Math.abs(boundingBoxRef.y0 - boundingBoxRef.y1)}
 
-      let segmentsEdge: Array<DOMPoint> | undefined = getPointsAlongCurve(points, WIDTH_CONSTANT, SVGWidth, SVGHeight, SHOW_SEGMENT_LOCATION);
+    let topLeftCoordCM = getStructureManager().convertPixelCoordinatesToCMSpace({x: boundingBoxRef.x0, y: boundingBoxRef.y0})
 
-      if (typeof segmentsEdge === "undefined") {
-        console.error("segmented edges returned incorrectly")
-        return;
-      }
+    // Empty javascript object for building out the Json
+    let slicingDataJson = {
+      'SVGData': SVGFileDataText,
+      "SVGWidthCM": inMapBoundingBoxDim.x,
+      "SVGHeightCM": inMapBoundingBoxDim.y,
+      "printBedWidthCM": WIDTH_CONSTANT,
+      "printBedHeightCM": LENGTH_CONSTANT,
+      "bedXOffsetCM": topLeftCoordCM.x,
+      "bedYOffsetCM": topLeftCoordCM.y
+    } 
 
-      console.log("out " + segmentsEdge.length)
-      console.log(segmentsEdge)
-
-      let offsetInPixelSpace = getStructureManager().convertCMLengthToPixelSpace(OFFSET)
-
-      // Iterate through points (considers two adjacent points and formulates position perpendicular to both)
-      for (let pointIndex = 0; pointIndex < segmentsEdge.length; pointIndex++) {
-
-        // Get vector between points
-        let p1;
-        let p2;
-
-        if (pointIndex < segmentsEdge.length - 1) {
-          p1 = segmentsEdge[pointIndex];
-          p2 = segmentsEdge[pointIndex + 1];
-        }
-        else {
-          // Last case which uses same tangent however uses last point as print location
-          p1 = segmentsEdge[pointIndex - 1];
-          p2 = segmentsEdge[pointIndex];
-        }
-
-        let vec = new DOMPoint(p2.x - p1.x, p2.y - p1.y);
-        let halfWayPoint;
-        if (pointIndex < segmentsEdge.length - 1) {
-          halfWayPoint = new DOMPoint(p1.x + (vec.x / 2), p1.y + (vec.y / 2));
-        }
-        else {
-          halfWayPoint = p2;
-        }
-        let perpVec = new DOMPoint(vec.y, -vec.x);
-
-        // Get unit vec of perpendicular vector
-        let perpVecMag = Math.sqrt(Math.pow(perpVec.x, 2) + Math.pow(perpVec.y, 2));
-        perpVec = new DOMPoint(perpVec.x / perpVecMag, perpVec.y / perpVecMag);
-
-        let robotAoa = getRobotAngleFromVector(perpVec)
-        robotAoa -= 180;
-        console.log("aoa " + robotAoa)
-        
-        let robotLocX = halfWayPoint.x + (perpVec.x * offsetInPixelSpace);
-        let robotLocY = halfWayPoint.y + (perpVec.y * offsetInPixelSpace);
-
-        structureManagerRef.addClientStructure(
-          new LocationMarkersStucture(robotLocX, 
-          robotLocY, robotAoa, offsetInPixelSpace))
-
-        // Add to multiGoto point as well to print
-        multiPointGoToRef.addDestination(halfWayPoint.x, halfWayPoint.y, robotAoa);
-      }
-      console.log(multiPointGoToRef)
+    let slicingData = JSON.stringify(slicingDataJson)
+    console.log(slicingData)
+    sliceData(slicingData)
+    }
+    else {
+      console.log("No File Loaded! Upload a file to slice")
     }
 
-  let testingText = '{ "employees" : [' +
-  '{ "firstName":"John" , "lastName":"Doe" },' +
-  '{ "firstName":"Anna" , "lastName":"Smith" },' +
-  '{ "firstName":"Peter" , "lastName":"Jones" } ]}';
-  sliceData(testingText)
+
 }
 
 export default function FileUploader() {
