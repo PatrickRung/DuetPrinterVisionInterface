@@ -3,7 +3,7 @@ import json
 
 # Local module imports
 from printBedSlicer.processSVG import sliceToPrintBed
-
+from serializingFunctions import serializeCoordinates
 app = Flask(__name__)
 
 @app.route('/')
@@ -41,10 +41,13 @@ def Slice():
     bedYOffsetCM = unpackedDataJson['bedYOffsetCM']
     print("Received from frontend: " + str(SVGRepresentation))  # "String I need"
 
-    res = sliceToPrintBed(SVGRepresentation, SVGWidthCM, SVGHeightCM, printBedWidthCM, printBedHeight)
+    printLocations = sliceToPrintBed(SVGRepresentation, SVGWidthCM, SVGHeightCM, printBedWidthCM, printBedHeight)
+
+    # Serailize into dictionary
+    serializedCoordinates = serializeCoordinates(printLocations)
 
     # Return satus code 200 that slicing worked
-    return jsonify({"received": ""}), 200
+    return jsonify(serializedCoordinates), 200
     
 
 if __name__ == '__main__':

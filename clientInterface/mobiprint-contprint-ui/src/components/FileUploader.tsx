@@ -79,13 +79,13 @@ export async function slice() {
 
     let slicingData = JSON.stringify(slicingDataJson)
     console.log(slicingData)
-    sliceData(slicingData)
-    }
-    else {
-      console.log("No File Loaded! Upload a file to slice")
-    }
 
-
+    let slicingResult = sliceData(slicingData)
+    console.log(slicingResult)
+  }
+  else {
+    console.log("No File Loaded! Upload a file to slice")
+  }
 }
 
 export default function FileUploader() {

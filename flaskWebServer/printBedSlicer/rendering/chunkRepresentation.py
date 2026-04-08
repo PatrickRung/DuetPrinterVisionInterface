@@ -1,3 +1,6 @@
+# File contains objects of many of the common ways to describe chunks, multiple chunks
+# or parts within the chunks such as lines and points.
+
 from xml.dom import minidom
 from abc import ABC, abstractmethod
 
@@ -6,6 +9,7 @@ from .renderingHelper import display_svg
 import numpy as np
 
 ARUCO_MARKER_LENGTH = 5
+PRINTER_OFFSET = 20
 
 class XMLRep:
 
@@ -224,4 +228,30 @@ class chunkRepresentation(XMLRep):
             newX = self.bedHeightCM - ARUCO_MARKER_LENGTH
 
         return newX, newY
+    
+    # Get and return desired print location based on the points added to the 
+    def getPrintLocation(self):
+        firstLine = self.currXMLChunkedLines[0]
+        secondLine = self.currXMLChunkedLines[-1]
+
+        # Direction vector along the line
+        dirVector = np.array([secondLine.x1_ - firstLine.x0_, 
+                            secondLine.y1_ - firstLine.y0_])
+
+        # Normalize direction first
+        dirMag = np.linalg.norm(dirVector)
+        dirUnit = dirVector / dirMag
+
+        # Perpendicular unit vector (rotate 90 degrees)
+        perpUnit = np.array([dirUnit[1], -dirUnit[0]])
+
+        # True midpoint
+        centerLoc = np.array([
+            (firstLine.x0_ + secondLine.x1_) / 2,
+            (firstLine.y0_ + secondLine.y1_) / 2
+        ])
+
+        diffLocation = centerLoc + (perpUnit * PRINTER_OFFSET)
+
+        return diffLocation
         

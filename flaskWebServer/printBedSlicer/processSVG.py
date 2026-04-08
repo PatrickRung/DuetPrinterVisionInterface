@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Local imports (Use a . in front for relative dir imports)
-from .rendering.chunkRepresentation import chunkRepresentation
+from rendering.chunkRepresentation import chunkRepresentation
 
 def compPoint(p1, p2):
     status = p1[0] == p2[0] and p1[1] == p2[1]
@@ -24,6 +24,9 @@ def sliceToPrintBed(SVGFileInput: str,
                     SVGHeightCM: int,
                     printBedWidthCM: int, 
                     printBedHeightCM: int):
+    
+    # Data to return
+    printLocations = []
 
     # read the SVG file
     domSVG = parseString(SVGFileInput)
@@ -90,7 +93,6 @@ def sliceToPrintBed(SVGFileInput: str,
                 currPointEndLineDist = pointDist(currPoint, np.array([x1, y1]))
 
                 while (currPointEndLineDist > 0):
-                    # Find bisection point
                     currPointEndLineDist = pointDist(currPoint, np.array([x1, y1]))
                     if currPointEndLineDist - printBedWidthCM < 0:
                         currChunk.appendLine(currPoint[0], currPoint[1], x1, y1)
@@ -105,7 +107,7 @@ def sliceToPrintBed(SVGFileInput: str,
                     # Get bisection point where the chunk ends
                     unit = (endPoint - startPoint) / pointDist(startPoint, endPoint)
                     bisect_point = currPoint + (unit * printBedDistRemaining)
-                    ax.plot(bisect_point[0], bisect_point[1], marker='o')
+                    ax.plot(bisect_point[0], bisect_point[1], marker='o', color = 'blue')
                     currPoint = bisect_point
 
                     # Update path tracing state
@@ -119,17 +121,28 @@ def sliceToPrintBed(SVGFileInput: str,
 
                     # Reset chunk data and account for chunk
                     chunkRepList.append(currChunk)
+                    currChunkPrintLoc = currChunk.getPrintLocation()
+                    # Denote on matplot lib in red where the Roborock will park
+                    ax.plot(currChunkPrintLoc[0], currChunkPrintLoc[1], marker='o', color='red')
+
                     currChunk.reorientInPrintSpace(pixelToCMWidth, pixelToCmHeight)
                     currChunk.displayChunk()
-                    # currChunk.displayChunk()
                     currChunk = chunkRepresentation(printBedWidthCM, printBedHeightCM)
 
         iterator += 1
+    # Final chunk
+    currChunkPrintLoc = currChunk.getPrintLocation()
+    chunkRepList.append(currChunk)
+
+    # Denote on matplot lib in red where the Roborock will park
+    ax.plot(currChunkPrintLoc[0], currChunkPrintLoc[1], marker='o', color='red')
+    printLocations.append(currChunkPrintLoc)
 
     # Only display when debugging
     if __name__ == '__main__':
         plt.show()
-    # Process chunks
+    
+    return printLocations
 
 if __name__ == '__main__':
     # Only need os for testing
