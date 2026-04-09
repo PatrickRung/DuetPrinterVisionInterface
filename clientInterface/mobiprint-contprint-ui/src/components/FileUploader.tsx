@@ -68,15 +68,13 @@ export async function slice() {
     let boundingBoxXDimCM = getStructureManager().convertPixelLengthToCMSpace(Math.abs(boundingBoxRef.x0 - boundingBoxRef.x1));
     let boundingBoxYDimCM = getStructureManager().convertPixelLengthToCMSpace(Math.abs(boundingBoxRef.y0 - boundingBoxRef.y1));
 
-    let inMapBoundingBoxDim = {x: boundingBoxXDimCM, y: boundingBoxYDimCM}
-
     let topLeftCoordCM = getStructureManager().convertPixelCoordinatesToCMSpace({x: boundingBoxRef.x0, y: boundingBoxRef.y0})
 
     // Empty javascript object for building out the Json
     let slicingDataJson = {
       'SVGData': SVGFileDataText,
-      "SVGWidthCM": inMapBoundingBoxDim.x,
-      "SVGHeightCM": inMapBoundingBoxDim.y,
+      "SVGWidthCM": boundingBoxXDimCM,
+      "SVGHeightCM": boundingBoxYDimCM,
       "printBedWidthCM": WIDTH_CONSTANT,
       "printBedHeightCM": LENGTH_CONSTANT,
       "bedXOffsetCM": topLeftCoordCM.x,

@@ -33,7 +33,7 @@ def sliceToPrintBed(SVGFileInput: str,
     svgRef = domSVG.getElementsByTagName('svg')
 
     pixelWidth = svgRef[0].getAttribute('width')
-    pixelHeight = svgRef[0].getAttribute('width')
+    pixelHeight = svgRef[0].getAttribute('height')
     
     path_strings = [path.getAttribute('d') for path
                     in domSVG.getElementsByTagName('path')]
@@ -92,8 +92,10 @@ def sliceToPrintBed(SVGFileInput: str,
 
                 currPointEndLineDist = pointDist(currPoint, np.array([x1, y1]))
 
-                while (currPointEndLineDist > 0):
-                    currPointEndLineDist = pointDist(currPoint, np.array([x1, y1]))
+                while True:
+                    currPointEndLineDist = pointDist(currPoint, endPoint)
+                    if currPointEndLineDist <= 0:
+                        break
                     if currPointEndLineDist - printBedWidthCM < 0:
                         currChunk.appendLine(currPoint[0], currPoint[1], x1, y1)
                         printBedDistRemaining -= currPointEndLineDist
@@ -122,10 +124,15 @@ def sliceToPrintBed(SVGFileInput: str,
                     # Reset chunk data and account for chunk
                     chunkRepList.append(currChunk)
                     currChunkPrintLoc = currChunk.getPrintLocation()
-                    printLocations.append(currChunkPrintLoc)
+                    
 
                     # Denote on matplot lib in red where the Roborock will park
                     ax.plot(currChunkPrintLoc[0], currChunkPrintLoc[1], marker='o', color='red')
+
+                    # Modify to be prop
+                    currChunkPrintLoc[0] = currChunkPrintLoc[0] * pixelToCMWidth
+                    currChunkPrintLoc[1] = currChunkPrintLoc[1] * pixelToCmHeight
+                    printLocations.append(currChunkPrintLoc)
 
                     currChunk.reorientInPrintSpace(pixelToCMWidth, pixelToCmHeight)
                     currChunk.displayChunk()
@@ -134,11 +141,17 @@ def sliceToPrintBed(SVGFileInput: str,
         iterator += 1
     # Final chunk
     currChunkPrintLoc = currChunk.getPrintLocation()
-    chunkRepList.append(currChunk)
 
     # Denote on matplot lib in red where the Roborock will park
     ax.plot(currChunkPrintLoc[0], currChunkPrintLoc[1], marker='o', color='red')
+
+    currChunkPrintLoc[0] = currChunkPrintLoc[0] * pixelToCMWidth
+    currChunkPrintLoc[1] = currChunkPrintLoc[1] * pixelToCmHeight
     printLocations.append(currChunkPrintLoc)
+    chunkRepList.append(currChunk)
+
+    print("Length " + str(len(printLocations)))
+    
 
     # Only display when debugging
     if __name__ == '__main__':
@@ -156,7 +169,7 @@ if __name__ == '__main__':
     filename = "testSVG/ZigZagLine.svg"
     with open(filename) as f:
         s = f.read()
-
+        print(s)
         # Real potential dimmensions
         # Prusa bed size 33 length, 33 width
         sliceToPrintBed(s, 75, 75, 33, 33)
