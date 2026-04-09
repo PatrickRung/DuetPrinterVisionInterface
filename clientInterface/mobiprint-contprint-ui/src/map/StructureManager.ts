@@ -277,6 +277,10 @@ class StructureManager {
     convertPixelCoordinatesToCMSpace(coordinates: PointCoordinates) : PointCoordinates {
         return {x: Math.floor(coordinates.x * this.pixelSize), y: Math.floor(coordinates.y * this.pixelSize)};
     }
+
+    convertPixelLengthToCMSpace(length: number) : number {
+        return Math.floor(length * this.pixelSize);
+    }
 }
 
 // This is important because it determines the draw order

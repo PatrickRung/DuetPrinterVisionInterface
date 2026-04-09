@@ -33,7 +33,7 @@ def Slice():
     SVGWidthCM = unpackedDataJson['SVGWidthCM']
     SVGHeightCM = unpackedDataJson['SVGHeightCM']
     printBedWidthCM = unpackedDataJson['printBedWidthCM']
-    printBedHeight = unpackedDataJson['printBedHeightCM']
+    printBedHeightCM = unpackedDataJson['printBedHeightCM']
 
     # # Additional parameters that won't be processed by the function and displaced
     # during the API call
@@ -41,12 +41,23 @@ def Slice():
     bedYOffsetCM = unpackedDataJson['bedYOffsetCM']
     print("Received from frontend: " + str(SVGRepresentation))  # "String I need"
 
-    printLocations = sliceToPrintBed(SVGRepresentation, SVGWidthCM, SVGHeightCM, printBedWidthCM, printBedHeight)
+    printLocations = sliceToPrintBed(SVGRepresentation, SVGWidthCM, SVGHeightCM, printBedWidthCM, printBedHeightCM)
+
+    printLocAppliedOffset = []
+
+    for coord in printLocations:
+        newCoord = [coord[0] + bedXOffsetCM, coord[1] + bedYOffsetCM]
+        printLocAppliedOffset.append(newCoord)
+
+    print("locations before offset " + str(printLocations))
+    print("locations applied offset " + str(printLocAppliedOffset))
 
     # Serailize into dictionary
-    serializedCoordinates = serializeCoordinates(printLocations)
+    serializedCoordinates = serializeCoordinates(printLocAppliedOffset)
 
     # Return satus code 200 that slicing worked
+    # Returns a dictionary that contains a list of coordinate distinguished by x and y to be unpacked
+    # on the js end
     return jsonify(serializedCoordinates), 200
     
 

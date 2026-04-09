@@ -10,6 +10,7 @@ import numpy as np
 
 ARUCO_MARKER_LENGTH = 5
 PRINTER_OFFSET = 20
+# Printer offset mgiht be updated by the front end via API call, just be weary it's not a const
 
 class XMLRep:
 

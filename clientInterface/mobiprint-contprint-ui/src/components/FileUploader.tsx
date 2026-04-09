@@ -14,6 +14,8 @@ import { sliceData } from "../api/raspi"
 import { getPointsAlongCurve, getPoints } from "./componentHelpers/lineParser"
 import { multiPointGoToRef } from "../map/actions/live_map_actions/GoToActionsMultiple"
 import { PrintObjectStructure } from "../map/structures/client_structures/PrintObjectStructure"
+import GoToTargetClientStructure from "../map/structures/client_structures/GoToTargetClientStructure"
+
 
 type UploadStatus = 'idle' | 'uploading' | 'success' | 'error';
 
@@ -62,7 +64,11 @@ export async function slice() {
       throw Error("No Bounding box found on UI, was the SVG uploaded and placed on the map?")
     }
 
-    let inMapBoundingBoxDim = {x: Math.abs(boundingBoxRef.x0 - boundingBoxRef.x1), y: Math.abs(boundingBoxRef.y0 - boundingBoxRef.y1)}
+
+    let boundingBoxXDimCM = getStructureManager().convertPixelLengthToCMSpace(Math.abs(boundingBoxRef.x0 - boundingBoxRef.x1));
+    let boundingBoxYDimCM = getStructureManager().convertPixelLengthToCMSpace(Math.abs(boundingBoxRef.y0 - boundingBoxRef.y1));
+
+    let inMapBoundingBoxDim = {x: boundingBoxXDimCM, y: boundingBoxYDimCM}
 
     let topLeftCoordCM = getStructureManager().convertPixelCoordinatesToCMSpace({x: boundingBoxRef.x0, y: boundingBoxRef.y0})
 
@@ -80,8 +86,23 @@ export async function slice() {
     let slicingData = JSON.stringify(slicingDataJson)
     console.log(slicingData)
 
-    let slicingResult = sliceData(slicingData)
+    // Perform API call and place Roborock Print location data in slicingResutl
+    let slicingResult = await sliceData(slicingData)
     console.log(slicingResult)
+
+    // TODO the folowing code should parse the returned json and update all of the coordinates
+    // for the Roborock to go to
+    for (const coord of slicingResult) {
+      const pointXCMValue = coord['x']
+      const pointYCMValue = coord['y']
+
+      let pixelSpacePoint = getStructureManager().convertCMCoordinatesToPixelSpace({x: pointXCMValue, y: pointYCMValue})
+
+      if (SHOW_SEGMENT_LOCATION) {
+        console.log("Displaying coordinate " + pixelSpacePoint.x + ", " + pixelSpacePoint.y);
+        structureManagerRef.addClientStructure(new GoToTargetClientStructure(pixelSpacePoint.x, pixelSpacePoint.y))
+      }
+    }
   }
   else {
     console.log("No File Loaded! Upload a file to slice")

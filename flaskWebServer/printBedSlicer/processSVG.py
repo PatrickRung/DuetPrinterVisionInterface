@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Local imports (Use a . in front for relative dir imports)
-from rendering.chunkRepresentation import chunkRepresentation
+from .rendering.chunkRepresentation import chunkRepresentation
 
 def compPoint(p1, p2):
     status = p1[0] == p2[0] and p1[1] == p2[1]
@@ -122,6 +122,8 @@ def sliceToPrintBed(SVGFileInput: str,
                     # Reset chunk data and account for chunk
                     chunkRepList.append(currChunk)
                     currChunkPrintLoc = currChunk.getPrintLocation()
+                    printLocations.append(currChunkPrintLoc)
+
                     # Denote on matplot lib in red where the Roborock will park
                     ax.plot(currChunkPrintLoc[0], currChunkPrintLoc[1], marker='o', color='red')
 
@@ -144,6 +146,8 @@ def sliceToPrintBed(SVGFileInput: str,
     
     return printLocations
 
+# For running this as main moduel for debugging run from root project dir as
+# python -m flaskWebServer.printBedSlicer.processSVG
 if __name__ == '__main__':
     # Only need os for testing
     import os
