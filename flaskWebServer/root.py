@@ -4,6 +4,8 @@ import json
 # Local module imports
 from printBedSlicer.processSVG import sliceToPrintBed
 from serializingFunctions import serializeCoordinates
+from duet.duetAPI import upload_and_print
+
 app = Flask(__name__)
 
 @app.route('/')
@@ -21,6 +23,11 @@ def disp(num):
 # API call for slicing the SVG and returning the coordinates to the user
 @app.route('/slice', methods=['POST'])
 def Slice():
+
+    # For testing purposes we have this portion upload a test gcode sliced version first!
+    # TODO remove when testing is done
+    upload_and_print("gcode/Shape-Box_0.25n_0.12mm_PETG_MK3.5_1h4m")
+
     body = request.get_json()          # Parse the JSON body
 
     if not body or 'data' not in body:
