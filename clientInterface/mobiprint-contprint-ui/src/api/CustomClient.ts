@@ -17,7 +17,7 @@ import { getAngularDir }  from "./geomHelper"
 export async function roborockRotate(angle: number, cb?: () => void) {
     console.log("Starting 90 degree rotation");
     
-    const ROBOT_STATE_URL = '/api/v2/robot/state';
+    const ROBOT_STATE_URL = '/roborock/api/v2/robot/state';
 
     if (angle > 360 || angle < 0) {
         console.error("Angle to rotate to must be between 360 and 0. Received: " + angle)

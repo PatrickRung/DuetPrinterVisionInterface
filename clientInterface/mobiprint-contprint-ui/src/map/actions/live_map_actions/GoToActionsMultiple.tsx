@@ -289,6 +289,10 @@ const GoToActions = (
         }
     );
 
+    async function rotateTest() {
+        roborockRotate(90);
+    }
+
 
     return (
         <>
@@ -361,6 +365,19 @@ const GoToActions = (
                         >
                             <PrintIcon style={{marginRight: "0.25rem", marginLeft: "-0.25rem"}}/>
                             Slice
+                        </ActionButton>
+                    }
+                </Grid2>
+                <Grid2>
+                    {
+                        <ActionButton
+                            color="inherit"
+                            size="medium"
+                            variant="extended"
+                            onClick={ rotateTest }
+                        >
+                            <PrintIcon style={{marginRight: "0.25rem", marginLeft: "-0.25rem"}}/>
+                            test
                         </ActionButton>
                     }
                 </Grid2>

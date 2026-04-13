@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import {expect, jest, test} from '@jest/globals';
-import {getAngularDir, getRobotAngleFromVector } from './api/geomHelper'
-import App from './App';
+import {getAngularDir, getRobotAngleFromVector } from '../api/geomHelper'
+import App from '../App';
 import { AssessmentRounded } from '@mui/icons-material';
 
 // Temp fix to define DOMPoint since it does not work with unit tests
