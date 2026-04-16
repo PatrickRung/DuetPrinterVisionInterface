@@ -67,6 +67,7 @@ export const execPrint = async (fileName: string) => {
         'fname': fileName 
     } 
     let slicingData = JSON.stringify(execPrintData)
+    console.log("trying")
     return raspiAPI
         .post("/execPrint", { data: slicingData })
         .then(({data}) => {

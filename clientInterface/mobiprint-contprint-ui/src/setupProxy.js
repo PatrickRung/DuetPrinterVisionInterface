@@ -15,7 +15,7 @@ module.exports = function (app) {
       target: 'http://192.168.0.82',
       changeOrigin: true,
       pathRewrite: {
-        '^/api1': '',
+        '^/roborock': '',
       },
     })
   );
@@ -24,10 +24,10 @@ module.exports = function (app) {
   app.use(
     '/raspi',
     createProxyMiddleware({
-      target: '172.17.43.188:5000',
+      target: 'http://192.168.0.207:5000',
       changeOrigin: true,
       pathRewrite: {
-        '^/api2': '',
+        '^/raspi': '',
       },
     })
   );
