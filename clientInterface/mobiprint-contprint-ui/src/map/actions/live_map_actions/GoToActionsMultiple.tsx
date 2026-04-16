@@ -20,6 +20,7 @@ import {
 } from "@mui/icons-material";
 import {sendGoToCommand} from "../../../api/client"
 import { roborockRotate } from "../../../api/CustomClient"
+import { execPrint } from "../../../api/raspi"
 import { getStructureManager, getRoborockGlobalRot } from "../../BaseMap"
 import { PrintObjectStructure } from "../../structures/client_structures/PrintObjectStructure"
 import { slice } from "../../../components/FileUploader"
@@ -289,8 +290,11 @@ const GoToActions = (
         }
     );
 
-    async function rotateTest() {
-        roborockRotate(90);
+    // This function is used to test any in development features such as functionaility that
+    // need to be performed via an API call
+    async function test() {
+        let slicingResult = await execPrint("Shape-Box_0.25n_0.12mm_PETG_MK3.5_1h4m.gcode")
+        console.log("Ret val " + slicingResult)
     }
 
 
@@ -374,7 +378,7 @@ const GoToActions = (
                             color="inherit"
                             size="medium"
                             variant="extended"
-                            onClick={ rotateTest }
+                            onClick={ test }
                         >
                             <PrintIcon style={{marginRight: "0.25rem", marginLeft: "-0.25rem"}}/>
                             test

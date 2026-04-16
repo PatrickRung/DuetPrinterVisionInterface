@@ -22,11 +22,7 @@ def disp(num):
 
 # API call for slicing the SVG and returning the coordinates to the user
 @app.route('/slice', methods=['POST'])
-def Slice():
-
-    # For testing purposes we have this portion upload a test gcode sliced version first!
-    # TODO remove when testing is done
-    upload_and_print("gcode/Shape-Box_0.25n_0.12mm_PETG_MK3.5_1h4m")
+def slice():
 
     body = request.get_json()          # Parse the JSON body
 
@@ -66,7 +62,21 @@ def Slice():
     # Returns a dictionary that contains a list of coordinate distinguished by x and y to be unpacked
     # on the js end
     return jsonify(serializedCoordinates), 200
+
+@app.route('/execPrint', methods=['POST'])
+def execPrint():
+    body = request.get_json()          # Parse the JSON body
+
+    if not body or 'data' not in body:
+        return jsonify({"error": "Missing 'data' in JSON body"}), 400
     
+    unpackedData = body['data']
+    unpackedDataJson = json.loads(unpackedData)
+
+    fileName = unpackedDataJson['fname']                # Unpack the string
+    
+    upload_and_print(str(fileName))
+    return jsonify(), 200
 
 if __name__ == '__main__':
     app.run()

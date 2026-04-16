@@ -27,10 +27,14 @@ def upload_and_print(file_path: str):
     """
     import os
 
-    if not os.path.exists(file_path):
-        print(f"Error: File '{file_path}' not found.")
+    print(f"", str(os.getcwd()))
+    absPath = os.getcwd() + "/gcode/" + file_path
+
+    if not os.path.exists(absPath):
+        print(f"Error: File '{absPath}' not found by os searcher.")
         return
 
+    
     file_name = os.path.basename(file_path)
     destination = f"0:/gcodes/{file_name}"
 

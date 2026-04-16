@@ -85,7 +85,13 @@ export async function slice() {
     console.log(slicingData)
 
     // Perform API call and place Roborock Print location data in slicingResutl
-    let slicingResult = await sliceData(slicingData)
+    let slicingResult = await sliceData(SVGFileDataText, 
+                                        boundingBoxXDimCM, 
+                                        boundingBoxYDimCM, 
+                                        WIDTH_CONSTANT, 
+                                        LENGTH_CONSTANT, 
+                                        topLeftCoordCM.x,
+                                        topLeftCoordCM.y)
     console.log(slicingResult)
 
     // TODO the folowing code should parse the returned json and update all of the coordinates
