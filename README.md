@@ -19,6 +19,7 @@ source myenv/bin/activate
 - python -m pip install svg.path                      # For SVG line parsing
 - pip install matplotlib                              # For debugging SVG line placement
 - pip install PyQt6                                   # Bug fix for matplot lib displaying
+- python -m pip install cairosvg 
 
 If dependency issues still arise, you might need to install the following packages.
 python3 -m pip install picamera2
