@@ -27,7 +27,7 @@ def upload_and_print(file_path: str):
     """
     import os
 
-    print(f"", str(os.getcwd()))
+    print(f"Trying to print")
     absPath = os.getcwd() + "/gcode/" + file_path
 
     if not os.path.exists(absPath):

@@ -1,5 +1,6 @@
 from flask import Flask, jsonify, request
 import json
+from flask_cors import CORS
 
 # Local module imports
 from printBedSlicer.processSVG import sliceToPrintBed
@@ -81,3 +82,4 @@ def execPrint():
 if __name__ == '__main__':
     # Listen on all interfaces. Just have to type in IP followed by port
     app.run(host='0.0.0.0', port=5000)
+    CORS(app)

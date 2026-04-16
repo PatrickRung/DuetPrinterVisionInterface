@@ -24,7 +24,7 @@ module.exports = function (app) {
   app.use(
     '/raspi',
     createProxyMiddleware({
-      target: 'http://192.168.0.207:5000',
+      target: '172.17.43.188:5000',
       changeOrigin: true,
       pathRewrite: {
         '^/api2': '',
