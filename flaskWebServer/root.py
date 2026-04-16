@@ -79,4 +79,5 @@ def execPrint():
     return jsonify(), 200
 
 if __name__ == '__main__':
-    app.run()
+    # Listen on all interfaces. Just have to type in IP followed by port
+    app.run(host='0.0.0.0', port=5000)
