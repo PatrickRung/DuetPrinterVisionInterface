@@ -1,0 +1,30 @@
+Welcome to the roborockGcode parser!
+
+The goal of this parser is to be able to use standard gcode files that can be generated
+by other slicers that use gcode flavors of any type. This parser will only handle the roborock 
+specfic Gcode and the any other Gcode will be sent to the 3D printer firmware directly.
+
+The purpose for using gcode files rather than having the path stored not on disk is to be able
+to debug different patterns quickly and als provide easier usability with slicers in the future
+in case the roborock gcode needs to be parsed in conjunction with the regular print gcode
+
+Prinitng will happen automatically as determined by the location of the printhead relative to the
+location of the roborock
+
+Gcode Dictionary:
+
+All roborock gcode starts with an R and followed by the R:
+
+-----------------------------------
+Roborock Move command
+RM [Move length meters]
+
+-----------------------------------
+Roborock Rotate command
+RR [Rotate arc degrees]
+
+-----------------------------------
+Roborock Move to ARuco marker
+RA [Aruco marker ID]
+
+
