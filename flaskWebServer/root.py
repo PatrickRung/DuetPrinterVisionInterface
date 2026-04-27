@@ -5,7 +5,7 @@ from flask_cors import CORS
 # Local module imports
 from printBedSlicer.processSVG import sliceToPrintBed
 from serializingFunctions import serializeCoordinates
-from duet.duetAPI import upload_and_print
+from duet.duetAPI import upload_and_print, get_print_status
 
 app = Flask(__name__)
 
@@ -17,9 +17,9 @@ def hello_world():
 def home():
     return jsonify({'data': 'hello world'})
 
-@app.route('/home/<int:num>', methods=['GET'])
-def disp(num):
-    return jsonify({'data': num ** 2})
+@app.route('/printstate', methods=['GET'])
+def disp():
+    return jsonify({'data': get_print_status()})
 
 # API call for slicing the SVG and returning the coordinates to the user
 @app.route('/slice', methods=['POST'])
@@ -39,29 +39,30 @@ def slice():
     printBedWidthCM = unpackedDataJson['printBedWidthCM']
     printBedHeightCM = unpackedDataJson['printBedHeightCM']
 
-    # # Additional parameters that won't be processed by the function and displaced
+    # Additional parameters that won't be processed by the function and displaced
     # during the API call
     bedXOffsetCM = unpackedDataJson['bedXOffsetCM']
     bedYOffsetCM = unpackedDataJson['bedYOffsetCM']
-    print("Received from frontend: " + str(SVGRepresentation))  # "String I need"
+    print("Received from frontend: " + str(SVGRepresentation))
 
+    # Returns list of [x, y, rotation] triples
     printLocations = sliceToPrintBed(SVGRepresentation, SVGWidthCM, SVGHeightCM, printBedWidthCM, printBedHeightCM)
 
-    printLocAppliedOffset = []
-
-    for coord in printLocations:
-        newCoord = [coord[0] + bedXOffsetCM, coord[1] + bedYOffsetCM]
-        printLocAppliedOffset.append(newCoord)
+    # Apply bed offset to x and y, preserve rotation as-is
+    printLocAppliedOffset = [
+        [coord[0] + bedXOffsetCM, coord[1] + bedYOffsetCM, coord[2]]
+        for coord in printLocations
+    ]
 
     print("locations before offset " + str(printLocations))
     print("locations applied offset " + str(printLocAppliedOffset))
 
-    # Serailize into dictionary
+    # Serialize into dictionary
     serializedCoordinates = serializeCoordinates(printLocAppliedOffset)
 
-    # Return satus code 200 that slicing worked
-    # Returns a dictionary that contains a list of coordinate distinguished by x and y to be unpacked
-    # on the js end
+    # Return status code 200 that slicing worked
+    # Returns a dictionary that contains a list of coordinates distinguished by x, y, and
+    # rotation to be unpacked on the js end
     return jsonify(serializedCoordinates), 200
 
 @app.route('/execPrint', methods=['POST'])

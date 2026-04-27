@@ -2,16 +2,23 @@
 import sys
 import os
 import dsf
+import json
+import time
 print(dsf.__file__)
 from dsf.connections import CommandConnection
 
-# Try to create upon creation of program
-command_connection = CommandConnection(debug=True)
+# Try to create upon creation of program (Timeout really big so we know when print done)
+command_connection = CommandConnection(debug=True, timeout=1000000)
+
+if command_connection:
+    command_connection.connect()
+
+# Global store
+printer_status = "idle"
 
 def send_simple_code():
     
     if command_connection:
-        command_connection.connect()
 
         try:
             # res = command_connection.set_plugin_data("ExecOnMcode", "test", "1")
@@ -20,6 +27,8 @@ def send_simple_code():
             print("M115 is telling us:", res)
         finally:
             command_connection.close()
+def get_print_status():
+    return printer_status
 
 def upload_and_print(file_path: str):
     """
@@ -27,24 +36,23 @@ def upload_and_print(file_path: str):
     
     :param file_path: Local path to the .gcode file to upload
     """
-    import os
+    printer_status = "printing"
 
     print(f"Trying to print")
     absPath = os.getcwd() + "/gcode/" + file_path
-
-    if not os.path.exists(absPath):
-        print(f"Error: File '{absPath}' not found by os searcher.")
-        return
-
     
     file_name = os.path.basename(file_path)
     destination = f"0:/gcodes/{file_name}"
 
     if command_connection:
         command_connection.connect()
+        # Home first (Even though its in macro)
         res = command_connection.perform_simple_code("M98 P\"/macros/prusa_mini_bed_sweep.gcode\"")
         print("G28 is telling us:", res)
         command_connection.close()
+
+    # Reset state
+    printer_status = "idle"
 
 if __name__ == "__main__":
 

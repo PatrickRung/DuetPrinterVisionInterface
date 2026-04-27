@@ -18,6 +18,25 @@ def compPoint(p1, p2):
 def pointDist(p1, p2):
     return np.sqrt(np.square(p1[0] - p2[0]) + np.square(p1[1] - p2[1]))
 
+def chunkRotation(chunkStartPoint, chunkEndPoint):
+    """
+    Compute the angle perpendicular to the chunk's travel direction.
+    Convention: up (negative Y) = 0 degrees, east (positive X) = 90 degrees.
+    The perpendicular is the chunk direction rotated 90 degrees clockwise.
+    """
+    dx = chunkEndPoint[0] - chunkStartPoint[0]
+    dy = chunkEndPoint[1] - chunkStartPoint[1]
+
+    # Angle of the chunk's travel direction using atan2.
+    # SVG Y-axis is flipped (down = positive), so negate dy for standard math convention.
+    # atan2 with (x, -y) gives angle from "up" axis, clockwise positive.
+    travel_angle_deg = np.degrees(np.arctan2(dx, -dy)) % 360
+
+    # Perpendicular = rotate travel direction 90 degrees clockwise
+    perp_angle_deg = (travel_angle_deg + 90) % 360
+
+    return perp_angle_deg
+
 # The SVG will fit the entire size of the bed size.
 def sliceToPrintBed(SVGFileInput: str, 
                     SVGWidthCM: int,
@@ -25,7 +44,7 @@ def sliceToPrintBed(SVGFileInput: str,
                     printBedWidthCM: int, 
                     printBedHeightCM: int):
     
-    # Data to return
+    # Data to return — each element is [x, y, rotation_degrees]
     printLocations = []
 
     # read the SVG file
@@ -59,6 +78,9 @@ def sliceToPrintBed(SVGFileInput: str,
 
     # Each chunk has it's own dedicated XML document that will be converted to XML later down the line
     currChunk = chunkRepresentation(printBedWidthCM, printBedHeightCM)
+
+    # Track the start point of the current chunk for rotation calculation
+    currChunkStartPoint = None
     
     # Draw the shape out on MatPlotLib
     iterator = 0
@@ -89,6 +111,10 @@ def sliceToPrintBed(SVGFileInput: str,
                 # If first point
                 if compPoint(currPoint, [-1, -1]):
                     currPoint = np.array([x0, y0])
+
+                # Track the start of the current chunk on its first line segment
+                if currChunkStartPoint is None:
+                    currChunkStartPoint = np.array([x0, y0])
 
                 currPointEndLineDist = pointDist(currPoint, np.array([x1, y1]))
 
@@ -121,6 +147,13 @@ def sliceToPrintBed(SVGFileInput: str,
                                             bisect_point[0], 
                                             bisect_point[1])
 
+                    # Compute rotation: perpendicular to the chunk's start->end direction
+                    chunkEndPoint = bisect_point
+                    rotation = chunkRotation(currChunkStartPoint, chunkEndPoint)
+
+                    # Reset chunk start for next chunk
+                    currChunkStartPoint = bisect_point
+
                     # Reset chunk data and account for chunk
                     chunkRepList.append(currChunk)
                     currChunkPrintLoc = currChunk.getPrintLocation()
@@ -132,22 +165,32 @@ def sliceToPrintBed(SVGFileInput: str,
                     # Modify to be prop
                     currChunkPrintLoc[0] = currChunkPrintLoc[0] * pixelToCMWidth
                     currChunkPrintLoc[1] = currChunkPrintLoc[1] * pixelToCmHeight
-                    printLocations.append(currChunkPrintLoc)
+                    printLocations.append([currChunkPrintLoc[0], currChunkPrintLoc[1], rotation])
 
                     currChunk.reorientInPrintSpace(pixelToCMWidth, pixelToCmHeight)
-                    currChunk.displayChunk()
+                    if __name__ == '__main__':
+                        currChunk.displayChunk()
                     currChunk = chunkRepresentation(printBedWidthCM, printBedHeightCM)
 
         iterator += 1
+
     # Final chunk
     currChunkPrintLoc = currChunk.getPrintLocation()
 
     # Denote on matplot lib in red where the Roborock will park
     ax.plot(currChunkPrintLoc[0], currChunkPrintLoc[1], marker='o', color='red')
 
+    # Compute rotation for the final chunk
+    # currPoint holds the last point reached; currChunkStartPoint is the start of this chunk
+    finalChunkEndPoint = currPoint
+    if currChunkStartPoint is not None and not np.array_equal(currChunkStartPoint, finalChunkEndPoint):
+        rotation = chunkRotation(currChunkStartPoint, finalChunkEndPoint)
+    else:
+        rotation = 0.0  # Fallback: no meaningful direction
+
     currChunkPrintLoc[0] = currChunkPrintLoc[0] * pixelToCMWidth
     currChunkPrintLoc[1] = currChunkPrintLoc[1] * pixelToCmHeight
-    printLocations.append(currChunkPrintLoc)
+    printLocations.append([currChunkPrintLoc[0], currChunkPrintLoc[1], rotation])
     chunkRepList.append(currChunk)
 
     print("Length " + str(len(printLocations)))

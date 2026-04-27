@@ -252,7 +252,5 @@ class chunkRepresentation(XMLRep):
             (firstLine.y0_ + secondLine.y1_) / 2
         ])
 
-        diffLocation = centerLoc + (perpUnit * PRINTER_OFFSET)
-
-        return diffLocation
+        return centerLoc
         
