@@ -99,12 +99,16 @@ export async function slice() {
     for (const coord of slicingResult) {
       const pointXCMValue = coord['x']
       const pointYCMValue = coord['y']
+      const rotationValue = coord['rotation']  
+
+      console.log(pointXCMValue + ", " + pointYCMValue)
 
       let pixelSpacePoint = getStructureManager().convertCMCoordinatesToPixelSpace({x: pointXCMValue, y: pointYCMValue})
 
       if (SHOW_SEGMENT_LOCATION) {
         console.log("Displaying coordinate " + pixelSpacePoint.x + ", " + pixelSpacePoint.y);
         structureManagerRef.addClientStructure(new GoToTargetClientStructure(pixelSpacePoint.x, pixelSpacePoint.y))
+        multiPointGoToRef.addDestination(pixelSpacePoint.x, pixelSpacePoint.y, rotationValue + 90)
       }
     }
   }

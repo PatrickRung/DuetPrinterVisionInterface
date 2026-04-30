@@ -43,12 +43,7 @@ def upload_and_print(file_path: str):
 
         try:
             # Upload the file to the Duet SD card
-            res = command_connection.upload(file_path, destination)
-            print("Upload response:", res)
-
-            # Start the print job
-            res = command_connection.perform_simple_code(f"M32 {destination}")
-            print("Print started:", res)
+            command_connection.perform_simple_code
 
         finally:
             command_connection.close()

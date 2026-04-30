@@ -12,7 +12,7 @@ module.exports = function (app) {
   app.use(
     '/roborock',
     createProxyMiddleware({
-      target: 'http://192.168.0.82',
+      target: 'http://192.168.0.127/',
       changeOrigin: true,
       pathRewrite: {
         '^/roborock': '',
@@ -24,7 +24,7 @@ module.exports = function (app) {
   app.use(
     '/raspi',
     createProxyMiddleware({
-      target: 'http://192.168.0.207:5000',
+      target: 'http://192.168.0.247:5000',
       changeOrigin: true,
       pathRewrite: {
         '^/raspi': '',

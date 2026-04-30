@@ -1,25 +1,14 @@
 // Helper functions for math isolated from existing website dependencies
 
 // Helper functions for rotation
-export function getAngularDir(initAngle: number, desiredAngle: number) : number {
-    // reg case
-    let regDiff = Math.abs(desiredAngle - initAngle)
-    // wrappAroundCase
-    let wrapDiff = Math.abs(Math.abs(360 -desiredAngle) - initAngle)
+export function getAngularDir(initAngle: number, desiredAngle: number): number {
+    // Normalize the raw difference into (-180, 180]
+    let diff = ((desiredAngle - initAngle) + 360) % 360;
+    if (diff > 180) diff -= 360;
 
-    if (regDiff > wrapDiff) {
-        if (desiredAngle > initAngle) {
-            return -1
-        }
-        else {
-            return 1
-        }
-    }
-    else {
-        return (desiredAngle - initAngle) / regDiff
-    }
-    // Will fail unit test
-    return 0
+    // Positive diff → counterclockwise (+1), negative → clockwise (-1)
+    // Adjust sign convention to match your robot's rotation direction
+    return diff > 0 ? 1 : -1;
 }
 
 // Vector to roborock rotation (0 degrees is to the left, 90 degrees is to the right)

@@ -3,6 +3,7 @@ import axios, { AxiosError } from 'axios';
 export const raspiAPIBaseURL = "/raspi";
 export const raspiAPI = axios.create({
     baseURL: raspiAPIBaseURL,
+    timeout: 86400000,
 });
 
 /**
@@ -70,6 +71,22 @@ export const execPrint = async (fileName: string) => {
     console.log("trying")
     return raspiAPI
         .post("/execPrint", { data: slicingData })
+        .then(({data}) => {
+            return data;
+        })
+        .catch((error: AxiosError) => {
+            if (error.response?.status === 400) {
+                // Handle 400 Bad Request
+                console.error("Bad request:", error.response.data);
+                throw new Error("Invalid data provided");
+            }
+            throw error; // Re-throw other errors
+        });
+};
+
+export const home_printer = async () => {
+    return raspiAPI
+        .post("/homeprinter", {})
         .then(({data}) => {
             return data;
         })

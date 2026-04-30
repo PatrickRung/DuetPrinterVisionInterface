@@ -20,7 +20,7 @@ import {
 } from "@mui/icons-material";
 import {sendGoToCommand} from "../../../api/client"
 import { roborockRotate } from "../../../api/CustomClient"
-import { execPrint } from "../../../api/raspi"
+import { execPrint, home_printer} from "../../../api/raspi"
 import { getStructureManager, getRoborockGlobalRot } from "../../BaseMap"
 import { PrintObjectStructure } from "../../structures/client_structures/PrintObjectStructure"
 import { slice } from "../../../components/FileUploader"
@@ -131,90 +131,98 @@ class MultiPointGoToState {
         this.destinationsForRoborock.push(new printLocation(x_pos, y_pos, rotation));
     }
 
-    async executeConsecGoTo() {
-        console.log("Points left " + this.destinationsForRoborock.length)
-        if (this.destinationsForRoborock.length == 0) {
-            return;
-        }
-
-        // Pop off the target that we are going to right now
-        let recentGoTo = this.destinationsForRoborock.shift() 
-
-        // Refetch structure manager
-        this.structureManagerRef = getStructureManager();
-        if (recentGoTo == undefined || 
-            this.structureManagerRef == null) {
-                console.error("Tried to go to multiple with either existing path or unable to fetch required objects")
+        async executeConsecGoTo() {
+            console.log("Points left " + this.destinationsForRoborock.length)
+            if (this.destinationsForRoborock.length == 0) {
                 return;
-        }
-
-        this.currDestination = recentGoTo;
-        let CMCoords = this.structureManagerRef.convertPixelCoordinatesToCMSpace({x: recentGoTo.x_, y: recentGoTo.y_})
-
-        // We want to figure out relative to the aoa where the destination is
-        let aoaRad = recentGoTo.aoa_ * (Math.PI / 180)
-        let destX = CMCoords.x + (OFFSET * Math.cos(aoaRad))
-        let destY = CMCoords.y + (OFFSET * Math.sin(aoaRad))
-
-        // Sending the go to command right away leads to issues, delay for 3 seconds
-        setTimeout(() => {
-            sendGoToCommand({x: destX, y: destY});
-        }, 3000)
-
-        this.currentTraverseState = RobotGoToStates.INIT;
-    }
-
-    updateTraverseFSM(newStatus: 
-        "moving" | "paused" | "error" | "docked" | "idle" | "returning" | "cleaning" | "manual_control" | undefined
-    ) {
-        // Check current state
-        if (this.currentTraverseState === RobotGoToStates.NODEST) {
-            // Don't do anything, wait for a destination
-        }
-        else if (this.currentTraverseState === RobotGoToStates.INIT)  {
-            if (newStatus === "moving") {
-                console.log("start moving")
-                this.currentTraverseState = RobotGoToStates.TRAVERSING;
             }
+
+            // Pop off the target that we are going to right now
+            let recentGoTo = this.destinationsForRoborock.shift() 
+
+            // Refetch structure manager
+            this.structureManagerRef = getStructureManager();
+            if (recentGoTo == undefined || 
+                this.structureManagerRef == null) {
+                    console.error("Tried to go to multiple with either existing path or unable to fetch required objects")
+                    return;
+            }
+
+            this.currDestination = recentGoTo;
+            let CMCoords = this.structureManagerRef.convertPixelCoordinatesToCMSpace({x: recentGoTo.x_, y: recentGoTo.y_})
+
+            // We want to figure out relative to the aoa where the destination is
+            let aoaRad = recentGoTo.aoa_ * (Math.PI / 180)
+            let destX = CMCoords.x + (OFFSET * Math.cos(aoaRad))
+            let destY = CMCoords.y + (OFFSET * Math.sin(aoaRad))
+
+            // Sending the go to command right away leads to issues, delay for 3 seconds
+            setTimeout(() => {
+                sendGoToCommand({x: destX, y: destY});
+            }, 3000)
+
+            this.currentTraverseState = RobotGoToStates.INIT;
         }
-        else if (this.currentTraverseState === RobotGoToStates.TRAVERSING) {
-            if (newStatus === "paused" || newStatus === "idle") {
-                this.currentTraverseState = RobotGoToStates.NODEST;
-                console.log("finished moving")
 
-                // Before moving on we want to rotate to the desired angle
-                let currRot = getRoborockGlobalRot()
+        async updateTraverseFSM(newStatus: 
+            "moving" | "paused" | "error" | "docked" | "idle" | "returning" | "cleaning" | "manual_control" | undefined
+        ) {
+            // Check current state
+            if (this.currentTraverseState === RobotGoToStates.NODEST) {
+                // Don't do anything, wait for a destination
+            }
+            else if (this.currentTraverseState === RobotGoToStates.INIT)  {
+                if (newStatus === "moving") {
+                    console.log("start moving")
+                    this.currentTraverseState = RobotGoToStates.TRAVERSING;
+                }
+            }
+            else if (this.currentTraverseState === RobotGoToStates.TRAVERSING) {
+                if (newStatus === "paused" || newStatus === "idle") {
+                    this.currentTraverseState = RobotGoToStates.NODEST;
+                    console.log("finished moving")
 
-                // Add slight delay as sending too many commands breaks the backend
-                setTimeout(() => {
-                    if (typeof this.currDestination !== "undefined") {  // It WILL be defined however error is being thrown
-                        // Ensure angle is < 360
-                        let desiredAngle = this.currDestination.aoa_ + 90;
+                    let currRot = getRoborockGlobalRot()
 
-                        while (desiredAngle > 360) {
-                            desiredAngle -= 360
-                        }
-                        while (desiredAngle < 0) {
-                            desiredAngle += 360;
-                        }
-                        roborockRotate(desiredAngle, () => {
-                            this.executeConsecGoTo()
-                        console.log("move onto next")
+                    // Wrap the setTimeout + roborockRotate in a Promise so we can await it
+                    await new Promise<void>((resolve) => {
+                        setTimeout(() => {
+                            if (typeof this.currDestination !== "undefined") {
+                                let desiredAngle = this.currDestination.aoa_ + 90;
+
+                                while (desiredAngle > 360) desiredAngle -= 360;
+                                while (desiredAngle < 0) desiredAngle += 360;
+
+                                roborockRotate(desiredAngle, () => {
+                                    this.executePrint();
+
+                                    resolve(); // ← resolves the outer Promise, unblocking the await
+                                });
+                            } else {
+                                resolve(); // resolve even if destination is undefined to avoid hanging
+                            }
+                        }, 500)
                     });
-                    }
-                }, 500)
 
-                
 
-                // Will handle if there is any more go to commands or if its empty
-                
+                    await new Promise(r => setTimeout(r, 30000));
+                }
             }
         }
+
+        async executePrint() {
+            console.log("wait for printer finish")
+            let slicingResult = await home_printer()
+            slicingResult = await execPrint("prusa_mini_bed_sweep.gcode")
+            console.log("Ret val " + slicingResult)
+
+            this.executeConsecGoTo();
+            console.log("move onto next")
+        }
     }
-}
 
 export var multiPointGoToRef = new MultiPointGoToState() 
-
+    
 function checkAproxEquals(val1: number, val2: number, thresh: number) {
     var diff = Math.abs(val1 - val2);
     return diff < thresh;
@@ -240,8 +248,8 @@ const GoToActions = (
     // which is frequent thus keeping the list populated
     React.useEffect(() => {
         if (goToTarget !== undefined) {
-            console.error("manually adding points is disabled right now for pipeline")
-            // multiPointGoToRef.updateDestinations(goToTarget);
+            // console.error("manually adding points is disabled right now for pipeline")
+            multiPointGoToRef.updateDestinations(goToTarget);
         }
     }, [goToTarget?.x0, goToTarget?.y0]); // Only run when coordinates change
 
@@ -293,7 +301,8 @@ const GoToActions = (
     // This function is used to test any in development features such as functionaility that
     // need to be performed via an API call
     async function test() {
-        let slicingResult = await execPrint("Shape-Box_0.25n_0.12mm_PETG_MK3.5_1h4m.gcode")
+        let slicingResult = await home_printer();
+        slicingResult = await execPrint("prusa_mini_bed_sweep.gcode")
         console.log("Ret val " + slicingResult)
     }
 
