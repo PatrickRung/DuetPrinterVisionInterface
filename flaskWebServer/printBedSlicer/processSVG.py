@@ -66,8 +66,10 @@ def sliceToPrintBed(SVGFileInput: str,
     assert len(path_strings) == len(path_raw_xml)
 
     # Multiply any pixel value against these values to get the CM width
-    pixelToCMWidth = SVGWidthCM / int(pixelWidth)
-    pixelToCmHeight = SVGHeightCM / int(pixelHeight)
+    pixelToCMWidth = SVGWidthCM / float(pixelWidth)
+    pixelToCmHeight = SVGHeightCM / float(pixelHeight)
+
+    printBedWidthPixels = printBedWidthCM / pixelToCMWidth
 
     fig, ax = plt.subplots()
     fig.set_figheight(10)
@@ -84,7 +86,7 @@ def sliceToPrintBed(SVGFileInput: str,
     
     # Draw the shape out on MatPlotLib
     iterator = 0
-    printBedDistRemaining = printBedWidthCM
+    printBedDistRemaining = printBedWidthPixels
     for path_string in path_strings:
         path = parse_path(path_string)
         # Assume that there is only one element per path
@@ -122,7 +124,7 @@ def sliceToPrintBed(SVGFileInput: str,
                     currPointEndLineDist = pointDist(currPoint, endPoint)
                     if currPointEndLineDist <= 0:
                         break
-                    if currPointEndLineDist - printBedWidthCM < 0:
+                    if currPointEndLineDist - printBedDistRemaining < 0:
                         currChunk.appendLine(currPoint[0], currPoint[1], x1, y1)
                         printBedDistRemaining -= currPointEndLineDist
                         print("Dist between points " + str(currPointEndLineDist))
@@ -139,7 +141,7 @@ def sliceToPrintBed(SVGFileInput: str,
                     currPoint = bisect_point
 
                     # Update path tracing state
-                    printBedDistRemaining = printBedWidthCM
+                    printBedDistRemaining = printBedWidthPixels
 
                     # Handle SVG
                     currChunk.appendLine(cachedCurrPoint[0], 

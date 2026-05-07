@@ -27,8 +27,13 @@ def send_simple_code():
             print("M115 is telling us:", res)
         finally:
             command_connection.close()
-def get_print_status():
-    return printer_status
+    res = command_connection.perform_simple_code("G28")
+
+def home_printer():
+    if command_connection:
+        command_connection.connect()
+    res = command_connection.perform_simple_code("G28")
+    
 
 def upload_and_print(file_path: str):
     """

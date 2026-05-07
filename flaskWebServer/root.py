@@ -5,7 +5,7 @@ from flask_cors import CORS
 # Local module imports
 from printBedSlicer.processSVG import sliceToPrintBed
 from serializingFunctions import serializeCoordinates
-from duet.duetAPI import upload_and_print, get_print_status
+from duet.duetAPI import upload_and_print, home_printer
 
 app = Flask(__name__)
 
@@ -17,9 +17,12 @@ def hello_world():
 def home():
     return jsonify({'data': 'hello world'})
 
-@app.route('/printstate', methods=['GET'])
-def disp():
-    return jsonify({'data': get_print_status()})
+@app.route('/homeprinter', methods=['POST'])
+def homeprinter():
+    home_printer()
+    return jsonify({}), 200
+
+
 
 # API call for slicing the SVG and returning the coordinates to the user
 @app.route('/slice', methods=['POST'])
