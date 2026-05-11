@@ -8,4 +8,7 @@ python -m pip install scipy                         # For matrix calculations
 python -m pip install flask-cors
 python -m pip install svg.path
 python -m pip install matplotlib
+python -m pip install PyQt6                                   # Bug fix for matplot lib displaying
+python -m pip install flask-cors
+python -m pip install dsf-python
 

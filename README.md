@@ -17,9 +17,9 @@ source myenv/bin/activate
 - python -m pip install scipy                         # For matrix calculations
 - python -m pip install flask flask-restful           # For python webserver to handle Raspberry PI API calls (Yes the architcture is kind of crazy right now)
 - python -m pip install svg.path                      # For SVG line parsing
-- pip install matplotlib                              # For debugging SVG line placement
-- pip install PyQt6                                   # Bug fix for matplot lib displaying
-- pip install flask-cors
+- python -m pip install matplotlib                              # For debugging SVG line placement
+- python -m pip install PyQt6                                   # Bug fix for matplot lib displaying
+- python -m pip install flask-cors
 - python -m pip install dsf-python
 
 If dependency issues still arise, you might need to install the following packages.
@@ -36,6 +36,8 @@ This is required to get pose estimation to work properly. This repo already cont
 Calibration for the Raspberry pi 5 official camera; however, if you are to use your own, you will need to calibrate it.
 The bash file in the BoardImages folder will allow you to take 11 photos of the Aruco board for calibration and more.
 Instructions can be found here https://docs.opencv.org/4.x/dc/dbb/tutorial_py_calibration.html and on the bash file
+
+# Runnning the code
 
 If all dependencies are met, run:
 sudo env/bin/python3 controlRoborock.py 
