@@ -3,6 +3,7 @@
 
 from xml.dom import minidom
 from abc import ABC, abstractmethod
+import os
 
 # Local imports (Use a . in front for relative dir imports)
 from .renderingHelper import display_svg
@@ -135,6 +136,29 @@ class chunkRepresentation(XMLRep):
         res  = svg.toprettyxml()
         print("res: " + res)
         return res
+
+    def save_svg(self, output_dir: str = "./output", filename: str = "output") -> str:
+        """
+        Calls toSVG() and saves the resulting SVG to a local directory.
+        
+        Args:
+            output_dir: Directory to save the SVG file (created if it doesn't exist)
+            filename:   Optional filename (without extension). Defaults to 'output'.
+        
+        Returns:
+            The full path to the saved file.
+        """
+        svg_content = self.toSVG()
+
+        os.makedirs(output_dir, exist_ok=True)
+
+        filepath = os.path.join(output_dir, f"{filename}.svg")
+
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(svg_content)
+
+        print(f"SVG saved to: {filepath}")
+        return filepath
     
     def displayChunk(self):
         svgString = self.toSVG()

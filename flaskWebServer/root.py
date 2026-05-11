@@ -22,8 +22,6 @@ def homeprinter():
     home_printer()
     return jsonify({}), 200
 
-
-
 # API call for slicing the SVG and returning the coordinates to the user
 @app.route('/slice', methods=['POST'])
 def slice():

@@ -7,11 +7,16 @@ import time
 print(dsf.__file__)
 from dsf.connections import CommandConnection
 
-# Try to create upon creation of program (Timeout really big so we know when print done)
-command_connection = CommandConnection(debug=True, timeout=1000000)
+# Declare to none in case where we are debugging isolated slicer
+command_connection = None
 
-if command_connection:
-    command_connection.connect()
+# Try to create upon creation of program (Timeout really big so we know when print done)
+try:
+    command_connection = CommandConnection(debug=True, timeout=1000000)
+    if command_connection:
+        command_connection.connect()
+except:
+    print("Duet board not connected right now!")
 
 # Global store
 printer_status = "idle"

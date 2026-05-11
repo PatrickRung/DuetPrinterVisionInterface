@@ -196,6 +196,12 @@ def sliceToPrintBed(SVGFileInput: str,
     chunkRepList.append(currChunk)
 
     print("Length " + str(len(printLocations)))
+
+    # Download all chunks as SVG
+    count = 0
+    for entry in chunkRepList:
+        entry.save_svg(filename = "Chunk" + str(count))
+        count += 1
     
 
     # Only display when debugging
