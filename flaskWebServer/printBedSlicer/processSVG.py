@@ -4,11 +4,14 @@ from svg.path.path import QuadraticBezier
 from svg.path.path import CubicBezier
 from xml.dom import minidom
 from xml.dom.minidom import parse, parseString, Document
+
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 
 # Local imports (Use a . in front for relative dir imports)
 from .rendering.chunkRepresentation import chunkRepresentation
+from .gcodeslice import slice_svg
 
 def compPoint(p1, p2):
     status = p1[0] == p2[0] and p1[1] == p2[1]
@@ -201,8 +204,12 @@ def sliceToPrintBed(SVGFileInput: str,
     count = 0
     for entry in chunkRepList:
         entry.save_svg(filename = "Chunk" + str(count))
+
+        path = os.getcwd() + "/output/Chunk" + str(count) + ".svg"
+        slice_svg(svg_path=path, output_path = "./output")
         count += 1
-    
+
+    # Convert all files to gcode files
 
     # Only display when debugging
     if __name__ == '__main__':
