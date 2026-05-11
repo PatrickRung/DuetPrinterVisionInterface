@@ -37,6 +37,20 @@ Calibration for the Raspberry pi 5 official camera; however, if you are to use y
 The bash file in the BoardImages folder will allow you to take 11 photos of the Aruco board for calibration and more.
 Instructions can be found here https://docs.opencv.org/4.x/dc/dbb/tutorial_py_calibration.html and on the bash file
 
+# Installing Prusa Slicer deps
+Run:
+1. `wget https://github.com/davidk/PrusaSlicer-ARM.AppImage/releases/download/version_2.9.0/PrusaSlicer-version_2.9.0-aarch64.AppImage`
+
+2. `chmod +x PrusaSlicer-version_2.9.0-aarch64.AppImage`
+
+3. `sudo mv PrusaSlicer-version_2.9.0-aarch64.AppImage /usr/local/bin/prusa-slicer`
+
+For resolving FUSE issues
+4. `sudo apt install libfuse2`
+
+Resolve 
+5. `sudo apt install libwebkit2gtk-4.0-37`
+
 # Runnning the code
 
 If all dependencies are met, run:
