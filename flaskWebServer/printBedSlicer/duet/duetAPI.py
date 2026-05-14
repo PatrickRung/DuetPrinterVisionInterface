@@ -4,8 +4,12 @@ import os
 import dsf
 import json
 import time
-print(dsf.__file__)
+import shutil
+
 from dsf.connections import CommandConnection
+from pathlib import Path
+
+DSF_SD_DIR = "/opt/dsf/sd/gcodes"   # File found by searching sys for config.g
 
 # Declare to none in case where we are debugging isolated slicer
 command_connection = None
@@ -48,7 +52,7 @@ def upload_and_print(file_path: str):
     """
     printer_status = "printing"
 
-    print(f"Trying to print")
+    print(f"Trying to print " + file_path)
     absPath = os.getcwd() + "/gcode/" + file_path
     
     file_name = os.path.basename(file_path)
@@ -64,14 +68,36 @@ def upload_and_print(file_path: str):
     # Reset state
     printer_status = "idle"
 
+def upload_file_direct(
+    local_path: str,
+    remote_path: str = "gcodes/my_file.gcode",
+) -> bool:
+    """
+    Copy a file directly into DSF's virtual SD card directory.
+    Fastest option when running on the Pi itself.
+
+    Args:
+        local_path:   Path to the local file.
+        remote_path:  Destination relative to the SD root,
+                      e.g. "gcodes/my_job.gcode".
+
+    Returns:
+        True on success, False on failure.
+    """
+    dest = Path(DSF_SD_DIR) / remote_path
+    dest.parent.mkdir(parents=True, exist_ok=True)
+
+    source = Path(local_path)
+
+    shutil.copy2(source, dest)
+
+    return True
+
+# From main dir, assumes that we have Chunk1.gcode stored in file dir
+# python -m flaskWebServer.printBedSlicer.processSVG
 if __name__ == "__main__":
 
-    # Establish connection to duet DSF
-    send_simple_code()
+    absPath = os.getcwd() + "/output/Chunk1.gcode"
 
+    upload_file_direct(absPath, "Chunk1.gcode")
 
-    while True:
-
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            print("Gracefully shutting down")
-            break

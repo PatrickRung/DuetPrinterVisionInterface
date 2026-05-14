@@ -12,6 +12,7 @@ import os
 # Local imports (Use a . in front for relative dir imports)
 from .rendering.chunkRepresentation import chunkRepresentation
 from .gcodeslice import slice_svg
+from .duet.duetAPI import upload_file_direct
 
 def compPoint(p1, p2):
     status = p1[0] == p2[0] and p1[1] == p2[1]
@@ -203,10 +204,19 @@ def sliceToPrintBed(SVGFileInput: str,
     # Download all chunks as SVG
     count = 0
     for entry in chunkRepList:
-        entry.save_svg(filename = "Chunk" + str(count))
+        res = entry.save_svg(filename = "Chunk" + str(count))
+
+        print("res" + res)
+        if (res == ""):
+
+            continue
 
         path = os.getcwd() + "/output/Chunk" + str(count) + ".svg"
-        slice_svg(svg_path=path, output_path = "./output")
+        gcode_path = os.getcwd() + "/output/Chunk" + str(count) + ".gcode"
+        slice_svg(svg_path=path, output_path = "./output", chunk_index = count)
+
+        # Should be able to update and store on duet board
+        upload_file_direct(gcode_path, "Chunk" + str(count) + ".gcode")
         count += 1
 
     # Convert all files to gcode files

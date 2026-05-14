@@ -11,6 +11,7 @@ import numpy as np
 
 ARUCO_MARKER_LENGTH = 5
 PRINTER_OFFSET = 20
+LEN_THRESH = 18             # In CM, we need as too small leads to bad stl
 # Printer offset mgiht be updated by the front end via API call, just be weary it's not a const
 
 class XMLRep:
@@ -44,6 +45,9 @@ class lineRepresentation(XMLRep):
         self.x1_ = point[0]
         self.y1_ = point[1]
 
+    def getLength(self):
+        return np.linalg.norm(np.array([self.x0_, self.y0_]) - np.array([self.x1_, self.y1_]))
+
 # State for specific chunks, can be translated into SVG representation
 # when chunking is complete
 class chunkRepresentation(XMLRep):
@@ -70,6 +74,15 @@ class chunkRepresentation(XMLRep):
         """
         Wraps up all data into final SVG
         """
+        # Check if valid SVG (total length greater than print threshhold)
+
+        total_len = 0
+        for line in self.currXMLChunkedLines:
+            total_len += line.getLength() 
+        print("Chunk length" + str(total_len))
+        if (total_len != LEN_THRESH):
+            return ""
+
         svg = self.docRef.createElement("svg")
         svg.setAttribute("xmlns", "http://www.w3.org/2000/svg")
 
@@ -78,26 +91,34 @@ class chunkRepresentation(XMLRep):
         for currLineRepObj in self.currXMLChunkedLines:
             p0, p1 = currLineRepObj.getPoints()
 
+            # Convert points from cm to mm
+            p0_mm = p0 * 10
+            p1_mm = p1 * 10
+
             pathRef = self.docRef.createElement("path")
-            path_data = f"M {p0[0]} {p0[1]} L {p1[0]} {p1[1]}"
+            path_data = f"M {p0_mm[0]} {p0_mm[1]} L {p1_mm[0]} {p1_mm[1]}"
             pathRef.setAttribute("d", path_data)
             pathRef.setAttribute("stroke", "#55ff00")
 
             svg.appendChild(pathRef)
 
-            boundingMaxX = np.max([boundingMaxX, p0[0], p1[0]])
-            boundingMaxY = np.max([boundingMaxY, p0[1], p1[1]])
-        
-        # Set attribute and ensure that we set to base 64
-        svg.setAttribute("width", str(int(np.ceil(self.bedWidthCM))))
-        svg.setAttribute("height", str(int(np.ceil(self.bedHeightCM))))
+            boundingMaxX = np.max([boundingMaxX, p0_mm[0], p1_mm[0]])
+            boundingMaxY = np.max([boundingMaxY, p0_mm[1], p1_mm[1]])
 
-        # Append ArUco maker squares
+        # Set width/height in mm (converted from cm)
+        svg.setAttribute("width", str(int(np.ceil(self.bedWidthCM * 10))))
+        svg.setAttribute("height", str(int(np.ceil(self.bedHeightCM * 10))))
+
+        # Append ArUco marker squares
         firstLine = self.currXMLChunkedLines[0]
         lineOneStart, lineOneEnd = firstLine.getPoints()
+        lineOneStart = lineOneStart * 10
+        lineOneEnd = lineOneEnd * 10
 
         lastLine = self.currXMLChunkedLines[len(self.currXMLChunkedLines) - 1]
         lineTwoStart, lineTwoEnd = lastLine.getPoints()
+        lineTwoStart = lineTwoStart * 10
+        lineTwoEnd = lineTwoEnd * 10
 
         # Compute direction vector from lineOneStart -> lineTwoEnd, then rotate 90° CCW
         # to place markers outside (to the left of) the line set
@@ -108,32 +129,32 @@ class chunkRepresentation(XMLRep):
 
         # Rotate offset might need to be cw or ccw depending on print bed orientation
         perp_vec = np.array([dir_vec[1], -dir_vec[0]])
-        offset = perp_vec * ARUCO_MARKER_LENGTH
+        ARUCO_MARKER_LENGTH_MM = ARUCO_MARKER_LENGTH * 10
+        offset = perp_vec * ARUCO_MARKER_LENGTH_MM
 
         # Marker at lineOneStart: offset outward so the square sits outside the lines
-        marker1_x = lineOneStart[0] + offset[0] - ARUCO_MARKER_LENGTH / 2
-        marker1_y = lineOneStart[1] + offset[1] - ARUCO_MARKER_LENGTH / 2
+        marker1_x = lineOneStart[0] + offset[0] - ARUCO_MARKER_LENGTH_MM / 2
+        marker1_y = lineOneStart[1] + offset[1] - ARUCO_MARKER_LENGTH_MM / 2
 
         # Marker at lineTwoEnd: same outward offset
-        marker2_x = lineTwoEnd[0] + offset[0] - ARUCO_MARKER_LENGTH / 2
-        marker2_y = lineTwoEnd[1] + offset[1] - ARUCO_MARKER_LENGTH / 2
+        marker2_x = lineTwoEnd[0] + offset[0] - ARUCO_MARKER_LENGTH_MM / 2
+        marker2_y = lineTwoEnd[1] + offset[1] - ARUCO_MARKER_LENGTH_MM / 2
 
         for marker_x, marker_y in [(marker1_x, marker1_y), (marker2_x, marker2_y)]:
             validX, validY = self.moveIntoBounds(marker_x, marker_y)
             rectRef = self.docRef.createElement("rect")
             rectRef.setAttribute("x", str(validX))
             rectRef.setAttribute("y", str(validY))
-            rectRef.setAttribute("width", str(ARUCO_MARKER_LENGTH))
-            rectRef.setAttribute("height", str(ARUCO_MARKER_LENGTH))
+            rectRef.setAttribute("width", str(ARUCO_MARKER_LENGTH_MM))
+            rectRef.setAttribute("height", str(ARUCO_MARKER_LENGTH_MM))
             rectRef.setAttribute("stroke", "#55ff00")
             rectRef.setAttribute("fill", "none")
             svg.appendChild(rectRef)
 
         # TODO store state in some kind of data store for reference in 2nd pass backend control path
 
-
         # Print for debugging purposes
-        res  = svg.toprettyxml()
+        res = svg.toprettyxml()
         print("res: " + res)
         return res
 
@@ -149,6 +170,9 @@ class chunkRepresentation(XMLRep):
             The full path to the saved file.
         """
         svg_content = self.toSVG()
+
+        if (svg_content == ""):
+            return ""
 
         os.makedirs(output_dir, exist_ok=True)
 
@@ -236,7 +260,7 @@ class chunkRepresentation(XMLRep):
 
     def moveIntoBounds(self, topLeftX, topLeftY):
         '''
-        For moving ArUco square in bounds
+        For moving ArUco square in bounds (all units in mm)
         '''
 
         newX = topLeftX
@@ -247,10 +271,14 @@ class chunkRepresentation(XMLRep):
         if topLeftY < 0:
             newY = 0
 
-        if (topLeftX + ARUCO_MARKER_LENGTH > self.bedWidthCM):
-            newX = self.bedWidthCM - ARUCO_MARKER_LENGTH
-        if (topLeftY + ARUCO_MARKER_LENGTH > self.bedHeightCM):
-            newX = self.bedHeightCM - ARUCO_MARKER_LENGTH
+        bedWidthMM = self.bedWidthCM * 10
+        bedHeightMM = self.bedHeightCM * 10
+        ARUCO_MARKER_LENGTH_MM = ARUCO_MARKER_LENGTH * 10
+
+        if (topLeftX + ARUCO_MARKER_LENGTH_MM > bedWidthMM):
+            newX = bedWidthMM - ARUCO_MARKER_LENGTH_MM
+        if (topLeftY + ARUCO_MARKER_LENGTH_MM > bedHeightMM):
+            newY = bedHeightMM - ARUCO_MARKER_LENGTH_MM  # was incorrectly assigning to newX
 
         return newX, newY
     

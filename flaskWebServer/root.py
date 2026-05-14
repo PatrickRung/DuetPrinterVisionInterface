@@ -5,7 +5,7 @@ from flask_cors import CORS
 # Local module imports
 from printBedSlicer.processSVG import sliceToPrintBed
 from serializingFunctions import serializeCoordinates
-from duet.duetAPI import upload_and_print, home_printer
+from printBedSlicer.duet.duetAPI import upload_and_print, home_printer
 
 app = Flask(__name__)
 
