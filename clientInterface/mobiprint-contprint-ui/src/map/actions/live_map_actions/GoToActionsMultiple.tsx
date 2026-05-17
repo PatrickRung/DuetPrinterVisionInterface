@@ -69,6 +69,7 @@ class MultiPointGoToState {
 
     withinDesiredAreaCount: number;
     hardCoded: boolean;
+    currChunkID: number;
     // Can be any of the robot states
     currentTraverseState: typeof RobotGoToStates.INIT |
                           typeof RobotGoToStates.TRAVERSING |
@@ -82,6 +83,7 @@ class MultiPointGoToState {
         this.existingTimer = false;
         this.withinDesiredAreaCount = 0;
         this.hardCoded = false;
+        this.currChunkID = 0;
         this.currentTraverseState = RobotGoToStates.NODEST;
         if (this.hardCoded) {
 
@@ -213,7 +215,8 @@ class MultiPointGoToState {
         async executePrint() {
             console.log("wait for printer finish")
             let slicingResult = await home_printer()
-            slicingResult = await execPrint("prusa_mini_bed_sweep.gcode")
+            slicingResult = await execPrint("Chunk" + this.currChunkID + ".gcode")
+            this.currChunkID++;
             console.log("Ret val " + slicingResult)
 
             this.executeConsecGoTo();
@@ -271,6 +274,7 @@ const GoToActions = (
     const handleClick = React.useCallback(() => {
         console.log("init multi go to")
         multiPointGoToRef.executeConsecGoTo()
+        multiPointGoToRef.currChunkID = 0;  // Reset ID, ID corresponds to gcode print we execute
     }, [canGo, goToTarget, goTo, convertPixelCoordinatesToCMSpace]);
 
     const handleLongClick = React.useCallback(() => {
@@ -301,8 +305,8 @@ const GoToActions = (
     // This function is used to test any in development features such as functionaility that
     // need to be performed via an API call
     async function test() {
-        let slicingResult = await home_printer();
-        slicingResult = await execPrint("prusa_mini_bed_sweep.gcode")
+        // let slicingResult = await home_printer();
+        let slicingResult = await execPrint("Chunk1.gcode")
         console.log("Ret val " + slicingResult)
     }
 

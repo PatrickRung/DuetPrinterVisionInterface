@@ -24,6 +24,8 @@ test('test circle angle and dist work', () => {
   expect(getAngularDir(300, 30)).toEqual(1)
   expect(getAngularDir(30, 90)).toEqual(1)
   expect(getAngularDir(90, 30)).toEqual(-1)
+  expect(getAngularDir(180, 1)).toEqual(-1)
+  expect(getAngularDir(180, 359)).toEqual(1)
 });
 
 // Test vector to anlge
