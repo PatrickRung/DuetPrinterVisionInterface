@@ -61,7 +61,7 @@ def upload_and_print(file_path: str):
     if command_connection:
         command_connection.connect()
         # Home first (Even though its in macro)
-        res = command_connection.perform_simple_code("M98 P\"/macros/prusa_mini_bed_sweep.gcode\"")
+        res = command_connection.perform_simple_code("M98 P\"/gcodes/" + str(file_path) + "\"")
         print("G28 is telling us:", res)
         command_connection.close()
 

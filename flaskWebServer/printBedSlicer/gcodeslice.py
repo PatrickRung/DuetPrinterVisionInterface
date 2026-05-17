@@ -9,16 +9,21 @@ OPENSCAD_BIN = "/usr/bin/openscad"
 PROFILE_INI = "prusa_mini_pen_plotter.ini"
 
 
-def svg_to_stl(svg_path: Path, height_mm: float = 0.2, stl_name: str = None) -> Path:
+def svg_to_stl(svg_path: Path, height_mm: float = 0.2, wall_mm: float = 0.4, stl_name: str = None) -> Path:
     """
     Converts an SVG to STL via OpenSCAD linear_extrude.
     Rotated 90° counter-clockwise around Z-axis.
+    For closed shapes (e.g. squares), only the outline is extruded (hollow).
     stl_name controls the output filename so PrusaSlicer embeds the right name in gcode.
     """
+
     scad_content = (
         f'rotate([0, 0, 90]) '
         f'linear_extrude(height={height_mm}) '
-        f'import("{svg_path}");'
+        f'difference() {{'
+        f'  import("{svg_path}");'
+        f'  offset(r=-{wall_mm}) import("{svg_path}");'
+        f'}}'
     )
 
     with tempfile.NamedTemporaryFile(suffix=".scad", mode="w", delete=False) as f:
