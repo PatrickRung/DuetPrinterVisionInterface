@@ -72,9 +72,30 @@ def slice_svg(svg_path: str, output_path: str = None, chunk_index: int = None, z
     print(f"Slicing {svg_path.name} -> {output_path}")
 
     try:
+        START_GCODE = (
+            "M280 P0 S160\n"
+            "G4 S1\n"
+            "M280 P0 S10\n"
+            "G4 S1\n"
+            "M280 P0 S90\n"
+            "G4 S1\n"
+            "G90\n"
+            "G4 S1\n"
+            "G28\n"
+            "G1 Z5 F300\n"
+            "G1 X0 Y0 F3000\n"
+            "G1 Z0 F300"
+        )
+
+        END_GCODE = (
+            "G1 Z40"
+        )
+
         cmd = [
             PRUSASLICER_BIN,
             "--load", PROFILE_INI,
+            "--start-gcode", START_GCODE,
+            "--end-gcode", END_GCODE,
             "--center", "90,90",
             "--retract-lift", str(z_lift_mm),
             "--perimeter-speed", str(draw_speed),
