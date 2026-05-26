@@ -214,8 +214,9 @@ class MultiPointGoToState {
 
         async executePrint() {
             console.log("wait for printer finish")
-            let slicingResult = await home_printer()
-            slicingResult = await execPrint("Chunk" + this.currChunkID + ".gcode")
+            // Depreciated since our gcode files work now
+            // let slicingResult = await home_printer()
+            let slicingResult = await execPrint("Chunk" + this.currChunkID + ".gcode")
             this.currChunkID++;
             console.log("Ret val " + slicingResult)
 
@@ -306,8 +307,9 @@ const GoToActions = (
     // need to be performed via an API call
     async function test() {
         // let slicingResult = await home_printer();
-        let slicingResult = await execPrint("Chunk1.gcode")
-        console.log("Ret val " + slicingResult)
+        // let slicingResult = await execPrint("Chunk1.gcode")
+        // console.log("Ret val " + slicingResult)
+        roborockRotate(270);
     }
 
 

@@ -1,108 +1,103 @@
 import { sendHighResolutionManualControlInteraction } from "./client";
-import { Point, 
-    Capability
- } from "./types"
-import { floorObject } from "./utils";
 import { valetudoAPI } from "./client"
-import { WIDTH_CONSTANT, LENGTH_CONSTANT, OFFSET } from "../map/structures/map_structures/RobotPositionMapStructure"
 import { getStructureManager, getRoborockGlobalRot } from "../map/BaseMap"
-import { TextSnippet } from "@mui/icons-material";
-import { getAngularDir }  from "./geomHelper"
+import { getAngularDir } from "./geomHelper"
 
-// Rotates the roborock the parameter angle number of degrees
-// Works by polling the state as it rotates in small increments until
-// the desired angle is reached
-// TODO the rotation is fairly stuttery, we could just keep on sending commands repeatedly instead of waiting for the next poll
-// to send the rotate command
+// PID gains — tune these for your robot's inertia and poll rate
+const PID_KP = 0.7;   // Proportional: main driving force
+const PID_KI = 0.01;  // Integral: corrects steady-state offset
+const PID_KD = 0.4;   // Derivative: damps oscillation / overshoot
+const INTEGRAL_CLAMP = 50; // Prevents integral windup
+const ANGLE_TOLERANCE = 5; // Degrees within which we consider rotation done
+const POLL_INTERVAL_MS = 500;
+const MAX_POLLS = 100;
+const MAX_VELOCITY = 25; // Upper bound for the velocity command
+const MIN_VELOCITY = 8;  // Lower bound so the robot actually moves
+
+// Returns the shortest signed angular difference in [-180, 180]
+function shortestAngularDiff(from: number, to: number): number {
+    let diff = to - from;
+    while (diff > 180)  diff -= 360;
+    while (diff < -180) diff += 360;
+    return diff;
+}
+
 export async function roborockRotate(angle: number, cb?: () => void) {
-    console.log("Starting 90 degree rotation");
-    
-    const ROBOT_STATE_URL = '/roborock/api/v2/robot/state';
+    console.log(`roborockRotate: target=${angle}°`);
 
     if (angle > 360 || angle < 0) {
-        console.error("Angle to rotate to must be between 360 and 0. Received: " + angle)
-        return
+        console.error("Angle must be in [0, 360]. Received: " + angle);
+        return;
     }
-    
+
     try {
+        const ROBOT_STATE_URL = '/roborock/api/v2/robot/state';
 
-        // We can trust this angle because most likely roborock will have learned room already due to previous
-        // go to command
-        const initialAngle = getRoborockGlobalRot()
-
-        let targetAngle = angle;        // Leaving this in case wee want to do more pre processing
-        let angularVel = getAngularDir(initialAngle, targetAngle)
-
-        // Which dir roborock rotate
-        console.log(`Initial angle: ${initialAngle}, Target angle: ${targetAngle}`);
-        
-        // Import the API client function
-        
-        
-        // Start rotation - enable manual control and start rotating
-        await sendHighResolutionManualControlInteraction({
-            action: "enable"
-        });
-        
-        // Give it a moment to enable
+        await sendHighResolutionManualControlInteraction({ action: "enable" });
         await new Promise(resolve => setTimeout(resolve, 300));
-        
-        let rotationComplete = false;
+
+        // PID state
+        let integral = 0;
+        let prevError = shortestAngularDiff(getRoborockGlobalRot(), angle);
         let pollCount = 0;
-        const MAX_POLLS = 100; // Safety limit (50 seconds max at 500ms intervals)
-        
-        // Poll until rotation is complete
+        let rotationComplete = false;
+
         while (!rotationComplete && pollCount < MAX_POLLS) {
-            await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms between polls
-            
-            const currentStateResponse = await fetch(ROBOT_STATE_URL);
-            const currentState = await currentStateResponse.json();
+            await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS));
+
+            await fetch(ROBOT_STATE_URL); // trigger a state refresh
             const currentAngle = getRoborockGlobalRot();
-            
-            // Calculate angle difference (accounting for 360 degree wraparound)
-            let angleDiff = Math.abs(targetAngle - currentAngle);
-            if (angleDiff > 180) {
-                angleDiff = 360 - angleDiff;
-            }
-            
-            console.log(`Current angle: ${currentAngle}, Diff from target: ${angleDiff}`);
-            
-            // Check if we're within 2 degrees of target (tolerance for sensor accuracy)
-            if (angleDiff < 5) {
+
+            // Signed error: positive = need to rotate CCW, negative = CW
+            const error = shortestAngularDiff(currentAngle, angle);
+            const absError = Math.abs(error);
+
+            console.log(`Poll ${pollCount}: current=${currentAngle}° error=${error.toFixed(1)}°`);
+
+            if (absError < ANGLE_TOLERANCE) {
                 rotationComplete = true;
                 console.log("Rotation complete!");
-                await sendHighResolutionManualControlInteraction({
-                        action: "disable"
-                    });
-                // Execute callback
-                if (typeof cb !== "undefined") {
-                    cb()
-                }
+                await sendHighResolutionManualControlInteraction({ action: "disable" });
+                cb?.();
                 break;
             }
 
-            if (!rotationComplete) {
-                console.error("Rotation timeout - max polls reached");
-                // Attempt to stop rotation anyway
-                await sendHighResolutionManualControlInteraction({
-                    action: "move",
-                    vector: {
-                        velocity: 0,
-                        angle: 15 * angularVel
-                    }
-                });
-            }
-            
+            // PID computation
+            const dt = POLL_INTERVAL_MS / 1000; // seconds
+            const derivative = (error - prevError) / dt;
+            integral = Math.max(-INTEGRAL_CLAMP,
+                        Math.min(INTEGRAL_CLAMP, integral + error * dt));
+
+            const rawOutput = PID_KP * error
+                            + PID_KI * integral
+                            + PID_KD * derivative;
+
+            // Clamp to [MIN_VELOCITY, MAX_VELOCITY] preserving sign
+            const sign = rawOutput >= 0 ? 1 : -1;
+            const clampedVelocity = sign * Math.max(MIN_VELOCITY,
+                                            Math.min(MAX_VELOCITY, Math.abs(rawOutput)));
+
+            console.log(`PID: e=${error.toFixed(1)} i=${integral.toFixed(1)} d=${derivative.toFixed(1)} → vel=${clampedVelocity.toFixed(1)}`);
+
+            await sendHighResolutionManualControlInteraction({
+                action: "move",
+                vector: {
+                    velocity: 0,
+                    angle: clampedVelocity  // positive = one dir, negative = other
+                }
+            });
+
+            prevError = error;
             pollCount++;
         }
-        
+
+        if (!rotationComplete) {
+            console.error("Rotation timeout after max polls");
+            await sendHighResolutionManualControlInteraction({ action: "disable" });
+        }
+
     } catch (error) {
         console.error("Error during rotation:", error);
-        // Try again
-        setTimeout(() => {
-            roborockRotate(angle, cb);
-        }, 3000)
-
+        setTimeout(() => roborockRotate(angle, cb), 3000);
     }
 }
-
