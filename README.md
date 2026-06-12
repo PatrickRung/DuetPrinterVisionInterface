@@ -1,6 +1,6 @@
 # MobiPrint large scale printing codebase
-
-# Raspberry PI backend (3D printer and CV base movement controller)
+!!Required installation steps have numbers next to them!!
+# 1. Raspberry PI backend (3D printer and CV base movement controller)
 Below are instructions for the python backend running on the raspberry pi providng computer vision based localization
 
 You will need to set up the virtual environment using the system site package, thus use this command.
@@ -37,7 +37,7 @@ Calibration for the Raspberry pi 5 official camera; however, if you are to use y
 The bash file in the BoardImages folder will allow you to take 11 photos of the Aruco board for calibration and more.
 Instructions can be found here https://docs.opencv.org/4.x/dc/dbb/tutorial_py_calibration.html and on the bash file
 
-# Installing Prusa Slicer deps
+# 2. Installing Prusa Slicer deps
 Run:
 1. `wget https://github.com/davidk/PrusaSlicer-ARM.AppImage/releases/download/version_2.9.0/PrusaSlicer-version_2.9.0-aarch64.AppImage`
 
