@@ -51,6 +51,10 @@ For resolving FUSE issues
 Resolve 
 5. `sudo apt install libwebkit2gtk-4.0-37`
 
+# 2. Installing OpenScad
+Run:
+1. sudo apt install openscad
+
 # Runnning the code
 
 If all dependencies are met, run:
