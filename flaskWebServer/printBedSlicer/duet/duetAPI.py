@@ -9,6 +9,7 @@ import arucoHandling
 from picamera2 import Picamera2
 
 from dsf.connections import CommandConnection
+from ..gcodeslice import slice_svg
 from pathlib import Path
 
 # For Open CV
@@ -19,7 +20,8 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 
 # CONSTANTS
-ID_IN_VIEW_THRESHOLD = 100 # How many pose estimation data points before we finish localizing
+# TODO this should be a larger number however for testing i set it to 10
+ID_IN_VIEW_THRESHOLD = 10 # How many pose estimation data points before we finish localizing
 REF_ID = 23 # How many pose estimation data points before we finish localizing
 
 def configureCamera() -> Picamera2:
@@ -194,6 +196,11 @@ def localize_slice_print(fileName: str, marker_length: float, ID1: float, ID2: f
     # Start slicing process with averaged pose estimation
     # On the robot we assume that we use marker 23 for
 
+    # Convert quarternion rotation and extract rotation around z axi
+    r = Rotation.from_quat(avg_quat)
+    xyz = r.as_euler('xyz', degrees=True)
+
+    file_path = slice_svg(fileName, x_offset = avg_translation[0], y_offset = avg_translation[1], rotation_offset = xyz[2])
 
     printer_status = "printing"
 
@@ -202,8 +209,6 @@ def localize_slice_print(fileName: str, marker_length: float, ID1: float, ID2: f
     
     file_name = os.path.basename(file_path)
     destination = f"0:/gcodes/{file_name}"
-
-    # slice_svg(file_path, , )
 
     # if command_connection:
     #     command_connection.connect()

@@ -9,7 +9,8 @@ OPENSCAD_BIN = "/usr/bin/openscad"
 PROFILE_INI = "prusa_mini_pen_plotter.ini"
 
 
-def svg_to_stl(svg_path: Path, height_mm: float = 0.2, wall_mm: float = 0.4, stl_name: str = None) -> Path:
+def svg_to_stl(svg_path: Path, height_mm: float = 0.2, wall_mm: float = 0.4, stl_name: str = None,
+     x_offset: float = 0.0, y_offset: float = 0.0, rotation_offset: float = 0) -> Path:
     """
     Converts an SVG to STL via OpenSCAD linear_extrude.
     Rotated 90° counter-clockwise around Z-axis.
@@ -18,6 +19,7 @@ def svg_to_stl(svg_path: Path, height_mm: float = 0.2, wall_mm: float = 0.4, stl
     """
 
     scad_content = (
+        f'translate([{x_offset}, {y_offset}, {0}]) '
         f'rotate([0, 0, 90]) '
         f'linear_extrude(height={height_mm}) '
         f'difference() {{'
@@ -25,7 +27,6 @@ def svg_to_stl(svg_path: Path, height_mm: float = 0.2, wall_mm: float = 0.4, stl
         f'  offset(r=-{wall_mm}) import("{svg_path}");'
         f'}}'
     )
-
     with tempfile.NamedTemporaryFile(suffix=".scad", mode="w", delete=False) as f:
         f.write(scad_content)
         scad_path = Path(f.name)
@@ -49,7 +50,7 @@ def svg_to_stl(svg_path: Path, height_mm: float = 0.2, wall_mm: float = 0.4, stl
 
 
 def slice_svg(svg_path: str, output_path: str = None, chunk_index: int = None, z_lift_mm: float = 2.0, draw_speed: int = 30,
-              x_offset: int, y_offset: int, z_offset: int) -> str:
+              x_offset: float = 0.0, y_offset: float = 0.0, rotation_offset: float = 0) -> str:
     svg_path = Path(svg_path).resolve()
     if not svg_path.exists():
         raise FileNotFoundError(f"SVG not found: {svg_path}")
@@ -70,7 +71,8 @@ def slice_svg(svg_path: str, output_path: str = None, chunk_index: int = None, z
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    stl_path = svg_to_stl(svg_path, stl_name=chunk_name)
+    stl_path = svg_to_stl(svg_path, stl_name=chunk_name, 
+        x_offset = x_offset, y_offset = y_offset, rotation_offset = rotation_offset)
     print(f"Slicing {svg_path.name} -> {output_path}")
 
     try:
@@ -103,7 +105,7 @@ def slice_svg(svg_path: str, output_path: str = None, chunk_index: int = None, z
             "--perimeter-speed", str(draw_speed),
             "--export-gcode",
             "--output", str(output_path),
-            "--translate", x_offset, y_offset, 0,
+            "--rotate", str(rotation_offset),
             "--scale-to-fit", "180,180,1",
             str(stl_path),
         ]
