@@ -11,4 +11,5 @@ python -m pip install matplotlib
 python -m pip install PyQt6                                   # Bug fix for matplot lib displaying
 python -m pip install flask-cors
 python -m pip install dsf-python
+python -m pip install picamera2
 

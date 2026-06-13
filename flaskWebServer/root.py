@@ -81,6 +81,32 @@ def execPrint():
     upload_and_print(str(fileName))
     return jsonify(), 200
 
+@app.route('/execLocalizedPrint', methods=['POST'])
+def execLocalizedPrint():
+    """
+    Function for performing print at location however, it first uses the CV to perform localization
+    on itself again. Then it applies the offset when sending svg to slicer.
+    
+    The name `chunk_name` 
+    This function expects the size of the aruco markers within the request as
+    well as the aruco marker ids
+    """
+    body = request.get_json()          # Parse the JSON body
+
+    if not body or 'data' not in body:
+        return jsonify({"error": "Missing 'data' in JSON body"}), 400
+    
+    unpackedData = body['data']
+    unpackedDataJson = json.loads(unpackedData)
+
+    fileName = unpackedDataJson['chunk_name']                # Unpack the string
+    marker_length = unpackedDataJson['marker_length']                # Unpack the string
+    ID1 = unpackedDataJson['ID1']                # Unpack the string
+    ID2 = unpackedDataJson['ID2']                # Unpack the string
+    
+    localize_slice_print(str(fileName))
+    return jsonify(), 200
+
 if __name__ == '__main__':
     # Listen on all interfaces. Just have to type in IP followed by port
     app.run(host='0.0.0.0', port=5000)

@@ -48,7 +48,8 @@ def svg_to_stl(svg_path: Path, height_mm: float = 0.2, wall_mm: float = 0.4, stl
     return stl_path
 
 
-def slice_svg(svg_path: str, output_path: str = None, chunk_index: int = None, z_lift_mm: float = 2.0, draw_speed: int = 30) -> str:
+def slice_svg(svg_path: str, output_path: str = None, chunk_index: int = None, z_lift_mm: float = 2.0, draw_speed: int = 30,
+              x_offset: int, y_offset: int, z_offset: int) -> str:
     svg_path = Path(svg_path).resolve()
     if not svg_path.exists():
         raise FileNotFoundError(f"SVG not found: {svg_path}")
@@ -58,6 +59,7 @@ def slice_svg(svg_path: str, output_path: str = None, chunk_index: int = None, z
     if chunk_index is not None:
         chunk_name = f"Chunk{chunk_index}"
     else:
+        # Extract trailing numbers out of end of file name
         match = re.search(r'(\d+)$', svg_path.stem)
         chunk_name = f"Chunk{match.group(1)}" if match else svg_path.stem
 
@@ -101,6 +103,7 @@ def slice_svg(svg_path: str, output_path: str = None, chunk_index: int = None, z
             "--perimeter-speed", str(draw_speed),
             "--export-gcode",
             "--output", str(output_path),
+            "--translate", x_offset, y_offset, 0,
             "--scale-to-fit", "180,180,1",
             str(stl_path),
         ]
