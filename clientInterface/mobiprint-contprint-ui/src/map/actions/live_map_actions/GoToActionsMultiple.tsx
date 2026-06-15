@@ -20,7 +20,7 @@ import {
 } from "@mui/icons-material";
 import {sendGoToCommand} from "../../../api/client"
 import { roborockRotate } from "../../../api/CustomClient"
-import { execPrint, home_printer} from "../../../api/raspi"
+import { execPrint, home_printer, execLocalizedPrint} from "../../../api/raspi"
 import { getStructureManager, getRoborockGlobalRot } from "../../BaseMap"
 import { PrintObjectStructure } from "../../structures/client_structures/PrintObjectStructure"
 import { slice } from "../../../components/FileUploader"
@@ -184,8 +184,6 @@ class MultiPointGoToState {
                     this.currentTraverseState = RobotGoToStates.NODEST;
                     console.log("finished moving")
 
-                    let currRot = getRoborockGlobalRot()
-
                     // Wrap the setTimeout + roborockRotate in a Promise so we can await it
                     await new Promise<void>((resolve) => {
                         setTimeout(() => {
@@ -309,7 +307,9 @@ const GoToActions = (
         // let slicingResult = await home_printer();
         // let slicingResult = await execPrint("Chunk1.gcode")
         // console.log("Ret val " + slicingResult)
-        roborockRotate(270);
+        // roborockRotate(270);
+
+        execLocalizedPrint("Chunk1.svg", 10, 0, 1)
     }
 
 

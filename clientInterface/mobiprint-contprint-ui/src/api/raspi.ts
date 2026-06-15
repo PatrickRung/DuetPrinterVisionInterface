@@ -84,6 +84,34 @@ export const execPrint = async (fileName: string) => {
         });
 };
 
+export const execLocalizedPrint = async (chunkName: string,
+                                         markerLength: number,
+                                         ID1: number,
+                                         ID2: number
+) => {
+    let execPrintData = {
+        'chunk_name': chunkName,
+        'marker_length' : markerLength,
+        'ID1': ID1,
+        'ID2': ID2
+    } 
+    let slicingData = JSON.stringify(execPrintData)
+    console.log("performing print job on " + chunkName)
+    return raspiAPI
+        .post("/execLocalizedPrint", { data: slicingData })
+        .then(({data}) => {
+            return data;
+        })
+        .catch((error: AxiosError) => {
+            if (error.response?.status === 400) {
+                // Handle 400 Bad Request
+                console.error("Bad request:", error.response.data);
+                throw new Error("Invalid data provided");
+            }
+            throw error; // Re-throw other errors
+        });
+};
+
 export const home_printer = async () => {
     return raspiAPI
         .post("/homeprinter", {})
